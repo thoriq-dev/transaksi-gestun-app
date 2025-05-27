@@ -1,5 +1,6 @@
 import streamlit as st
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo  # Pastikan Python 3.9+ untuk mendukung modul ini
 
 # --- Fungsi Pendukung ---
 def estimasi_durasi(layanan):
@@ -31,7 +32,7 @@ if menu == "Estimasi Transfer":
         "Normal", "Kilat", "Super Kilat", "Tidak ada tambahan biaya layanan"
     ])
 
-    waktu_mulai = datetime.now()
+    waktu_mulai = datetime.now(ZoneInfo("Asia/Jakarta"))  # <- waktu lokal
     durasi = estimasi_durasi("Normal" if layanan == "Tidak ada tambahan biaya layanan" else layanan)
     waktu_selesai = estimasi_selesai(waktu_mulai, durasi)
 
@@ -77,7 +78,7 @@ elif menu == "Hitung Nominal Transaksi":
         layanan_transfer = "Kilat"
 
     if st.button("Hitung Sekarang"):
-        waktu_mulai = datetime.now()
+        waktu_mulai = datetime.now(ZoneInfo("Asia/Jakarta"))  # <- waktu lokal
         estimasi_selesai_transfer = estimasi_selesai(waktu_mulai, estimasi_durasi(layanan_transfer))
 
         st.subheader("📊 Hasil Perhitungan")
