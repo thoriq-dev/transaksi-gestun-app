@@ -19,56 +19,44 @@ def format_rupiah(nominal):
     return f"{int(nominal):,}".replace(",", ".")
 
 def tampilkan_rate(rate):
-    return f"{int((1 - rate) * 1000) / 10}%"  # contoh: 0.975 → 2.5%
+    return f"{int((1 - rate) * 1000) / 10}%"  # contoh: 0.975 -> 2.5%
+
+def hitung_fee(jenis, nominal, rate):
+    if jenis == "Gesek Kotor":
+        return int(nominal * (1 - rate))
+    else:
+        return int((nominal / rate) - nominal)
 
 # --- Antarmuka Web Streamlit ---
-st.title("🔢 Estimasi & Hitung Transaksi Gestun")
+st.set_page_config(page_title="Estimasi & Hitung Gestun", layout="centered")
+st.title("📂 Hitung Nominal & Estimasi Transfer Gestun")
 
-menu = st.sidebar.selectbox("Pilih Menu", ["Hitung Nominal Transaksi", "Estimasi Transfer"], index=0)
+menu = st.sidebar.selectbox("Pilih Menu", ["Hitung Nominal Transaksi", "Estimasi Transfer"])
 
-if menu == "Estimasi Transfer":
-    st.header("🕒 Estimasi Waktu Transfer")
-    layanan = st.selectbox("Pilih Layanan Transfer:", [
-        "Normal", "Kilat", "Super Kilat", "Tidak ada tambahan biaya layanan"
-    ])
-
-    waktu_mulai = datetime.now(ZoneInfo("Asia/Jakarta"))
-    durasi = estimasi_durasi("Normal" if layanan == "Tidak ada tambahan biaya layanan" else layanan)
-    waktu_selesai = estimasi_selesai(waktu_mulai, durasi)
-
-    st.subheader("Hasil Estimasi")
-    st.write(f"**Layanan Transfer:** {layanan}")
-    st.write(f"**Waktu Mulai:** {waktu_mulai.strftime('%H:%M')}")
-    st.write(f"**Perkiraan Selesai:** {waktu_selesai}")
-
-elif menu == "Hitung Nominal Transaksi":
+if menu == "Hitung Nominal Transaksi":
     st.header("💰 Hitung Nominal Transaksi")
 
     jenis = st.radio("Pilih Jenis Perhitungan:", ["Gesek Kotor", "Gesek Bersih"])
-    metode_rate = st.radio("Pilih Metode Rate:", ["Persentase (%)", "Flat (Rp)"])
 
-    if metode_rate == "Persentase (%)":
-        rate_dict = {
-            "2.5% (0.975) Visa & Master Card": 0.975,
-            "2.6% (0.974) Visa & Master Card": 0.974,
-            "3.5% (0.965) BCA Card": 0.965,
-            "4.7% (0.953) AMEX": 0.953,
-        }
-        rate_label = st.selectbox("Pilih Rate Jual:", list(rate_dict.keys()))
-        rate = rate_dict[rate_label]
-    else:
-        rate_flat_dict = {
-            "Rp30.000 per transaksi": 30000,
-            "Rp35.000 per transaksi": 35000
-        }
-        rate_label = st.selectbox("Pilih Rate Flat:", list(rate_flat_dict.keys()))
-        rate_flat = rate_flat_dict[rate_label]
+    rate_dict = {
+        "2.5% (0.975) Visa & Master Card": 0.975,
+        "2.6% (0.974) Visa & Master Card": 0.974,
+        "3.5% (0.965) BCA Card": 0.965,
+        "4.7% (0.953) AMEX": 0.953,
+    }
+    rate_label = st.selectbox("Pilih Rate Jual:", list(rate_dict.keys()))
+    rate = rate_dict[rate_label]
 
     nominal = st.number_input(
         f"Masukkan nominal {'transaksi' if jenis == 'Gesek Kotor' else 'transfer'} (Rp):",
         min_value=0,
         step=10000
     )
+
+    # Fee Info
+    if nominal > 0:
+        fee = hitung_fee(jenis, nominal, rate)
+        st.info(f"📌 Fee {tampilkan_rate(rate)} dari Rp {format_rupiah(nominal)} adalah Rp {format_rupiah(fee)}")
 
     biaya_opsi = {
         "Biaya administrasi nasabah baru (Rp10.000)": 10000,
@@ -77,14 +65,19 @@ elif menu == "Hitung Nominal Transaksi":
         "Biaya transfer beda bank (Rp10.000)": 10000,
         "Tidak ada tambahan biaya layanan": 0
     }
-    pilihan_biaya = st.multiselect("Pilih Biaya Tambahan Layanan:", list(biaya_opsi.keys()))
 
-    biaya_total = sum([biaya_opsi[b] for b in pilihan_biaya if "Tidak ada" not in b])
-    layanan_transfer = "Normal"
-    if "Biaya layanan super kilat" in " ".join(pilihan_biaya):
-        layanan_transfer = "Super Kilat"
-    elif "Biaya layanan kilat" in " ".join(pilihan_biaya):
-        layanan_transfer = "Kilat"
+    layanan_transfer = st.selectbox("Pilih Layanan Transfer:", [
+        "Normal", "Kilat", "Super Kilat"
+    ])
+
+    biaya_tambahan_opsi = [k for k in biaya_opsi if "layanan kilat" not in k and "super kilat" not in k and "Tidak ada" not in k]
+    biaya_pilihan = st.multiselect("Pilih Biaya Tambahan Lainnya:", biaya_tambahan_opsi)
+    biaya_total = sum([biaya_opsi[b] for b in biaya_pilihan])
+
+    if layanan_transfer == "Kilat":
+        biaya_total += biaya_opsi["Biaya layanan kilat (Rp15.000)"]
+    elif layanan_transfer == "Super Kilat":
+        biaya_total += biaya_opsi["Biaya layanan super kilat (Rp18.000)"]
 
     if st.button("Hitung Sekarang"):
         waktu_mulai = datetime.now(ZoneInfo("Asia/Jakarta"))
@@ -92,28 +85,30 @@ elif menu == "Hitung Nominal Transaksi":
 
         st.subheader("📊 Hasil Perhitungan")
         st.write(f"**Jenis Perhitungan:** {jenis}")
-        st.write(f"**Metode Rate:** {metode_rate}")
-        st.write(f"**Biaya Tambahan:** Rp {format_rupiah(biaya_total)}")
+        st.write(f"**Rate Jual:** {tampilkan_rate(rate)}")
+        st.write(f"**Fee (tanpa biaya tambahan):** Rp {format_rupiah(fee)}")
+        st.write(f"**Biaya Tambahan Total:** Rp {format_rupiah(biaya_total)}")
         st.write(f"**Estimasi Selesai Transfer:** {estimasi_selesai_transfer}")
 
-        if metode_rate == "Persentase (%)":
-            st.write(f"**Rate Jual:** {tampilkan_rate(rate)}")
-            if jenis == "Gesek Kotor":
-                nominal_transfer = int(nominal * rate - biaya_total)
-                st.write(f"**Nominal Transaksi:** Rp {format_rupiah(nominal)}")
-                st.write(f"**Nominal Transfer:** Rp {format_rupiah(nominal_transfer)}")
-            else:
-                nominal_transaksi = int((nominal + biaya_total) / rate)
-                st.write(f"**Nominal Transfer:** Rp {format_rupiah(nominal)}")
-                st.write(f"**Nominal Transaksi:** Rp {format_rupiah(nominal_transaksi)}")
-
+        if jenis == "Gesek Kotor":
+            nominal_transfer = int(nominal * rate - biaya_total)
+            st.write(f"**Nominal Transaksi:** Rp {format_rupiah(nominal)}")
+            st.write(f"**Nominal Transfer (setelah biaya):** Rp {format_rupiah(nominal_transfer)}")
         else:
-            st.write(f"**Rate Flat:** Rp {format_rupiah(rate_flat)}")
-            if jenis == "Gesek Kotor":
-                nominal_transfer = int(nominal - rate_flat - biaya_total)
-                st.write(f"**Nominal Transaksi:** Rp {format_rupiah(nominal)}")
-                st.write(f"**Nominal Transfer:** Rp {format_rupiah(nominal_transfer)}")
-            else:
-                nominal_transaksi = int(nominal + rate_flat + biaya_total)
-                st.write(f"**Nominal Transfer:** Rp {format_rupiah(nominal)}")
-                st.write(f"**Nominal Transaksi:** Rp {format_rupiah(nominal_transaksi)}")
+            fee = int(nominal / rate - nominal)
+            nominal_transaksi = nominal + fee + biaya_total
+            st.write(f"**Nominal Transfer:** Rp {format_rupiah(nominal)}")
+            st.write(f"**Nominal Transaksi:** Rp {format_rupiah(nominal_transaksi)}")
+
+elif menu == "Estimasi Transfer":
+    st.header("🕒 Estimasi Waktu Transfer")
+    layanan = st.selectbox("Pilih Layanan Transfer:", ["Normal", "Kilat", "Super Kilat"])
+
+    waktu_mulai = datetime.now(ZoneInfo("Asia/Jakarta"))
+    durasi = estimasi_durasi(layanan)
+    waktu_selesai = estimasi_selesai(waktu_mulai, durasi)
+
+    st.subheader("Hasil Estimasi")
+    st.write(f"**Layanan Transfer:** {layanan}")
+    st.write(f"**Waktu Mulai:** {waktu_mulai.strftime('%H:%M')}")
+    st.write(f"**Perkiraan Selesai:** {waktu_selesai}")
