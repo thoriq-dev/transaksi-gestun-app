@@ -1,6 +1,6 @@
 import streamlit as st
 from datetime import datetime, timedelta
-from zoneinfo import ZoneInfo  # Pastikan Python 3.9+ untuk mendukung modul ini
+from zoneinfo import ZoneInfo  # Python 3.9+
 
 # --- Fungsi Pendukung ---
 def estimasi_durasi(layanan):
@@ -24,7 +24,7 @@ def tampilkan_rate(rate):
 # --- Antarmuka Web Streamlit ---
 st.title("🔢 Estimasi & Hitung Transaksi Gestun")
 
-menu = st.sidebar.selectbox("Pilih Menu", ["Estimasi Transfer", "Hitung Nominal Transaksi"])
+menu = st.sidebar.selectbox("Pilih Menu", ["Hitung Nominal Transaksi", "Estimasi Transfer"], index=0)
 
 if menu == "Estimasi Transfer":
     st.header("🕒 Estimasi Waktu Transfer")
@@ -32,7 +32,7 @@ if menu == "Estimasi Transfer":
         "Normal", "Kilat", "Super Kilat", "Tidak ada tambahan biaya layanan"
     ])
 
-    waktu_mulai = datetime.now(ZoneInfo("Asia/Jakarta"))  # <- waktu lokal
+    waktu_mulai = datetime.now(ZoneInfo("Asia/Jakarta"))
     durasi = estimasi_durasi("Normal" if layanan == "Tidak ada tambahan biaya layanan" else layanan)
     waktu_selesai = estimasi_selesai(waktu_mulai, durasi)
 
@@ -45,15 +45,24 @@ elif menu == "Hitung Nominal Transaksi":
     st.header("💰 Hitung Nominal Transaksi")
 
     jenis = st.radio("Pilih Jenis Perhitungan:", ["Gesek Kotor", "Gesek Bersih"])
+    metode_rate = st.radio("Pilih Metode Rate:", ["Persentase (%)", "Flat (Rp)"])
 
-    rate_dict = {
-        "2.5% (0.975)": 0.975,
-        "2.6% (0.974)": 0.974,
-        "3.5% (0.965)": 0.965,
-        "4.7% (0.953)": 0.953,
-    }
-    rate_label = st.selectbox("Pilih Rate Jual:", list(rate_dict.keys()))
-    rate = rate_dict[rate_label]
+    if metode_rate == "Persentase (%)":
+        rate_dict = {
+            "2.5% (0.975) Visa & Master Card": 0.975,
+            "2.6% (0.974) Visa & Master Card": 0.974,
+            "3.5% (0.965) BCA Card": 0.965,
+            "4.7% (0.953) AMEX": 0.953,
+        }
+        rate_label = st.selectbox("Pilih Rate Jual:", list(rate_dict.keys()))
+        rate = rate_dict[rate_label]
+    else:
+        rate_flat_dict = {
+            "Rp30.000 per transaksi": 30000,
+            "Rp35.000 per transaksi": 35000
+        }
+        rate_label = st.selectbox("Pilih Rate Flat:", list(rate_flat_dict.keys()))
+        rate_flat = rate_flat_dict[rate_label]
 
     nominal = st.number_input(
         f"Masukkan nominal {'transaksi' if jenis == 'Gesek Kotor' else 'transfer'} (Rp):",
@@ -78,20 +87,33 @@ elif menu == "Hitung Nominal Transaksi":
         layanan_transfer = "Kilat"
 
     if st.button("Hitung Sekarang"):
-        waktu_mulai = datetime.now(ZoneInfo("Asia/Jakarta"))  # <- waktu lokal
+        waktu_mulai = datetime.now(ZoneInfo("Asia/Jakarta"))
         estimasi_selesai_transfer = estimasi_selesai(waktu_mulai, estimasi_durasi(layanan_transfer))
 
         st.subheader("📊 Hasil Perhitungan")
         st.write(f"**Jenis Perhitungan:** {jenis}")
-        st.write(f"**Rate Jual:** {tampilkan_rate(rate)}")
+        st.write(f"**Metode Rate:** {metode_rate}")
         st.write(f"**Biaya Tambahan:** Rp {format_rupiah(biaya_total)}")
         st.write(f"**Estimasi Selesai Transfer:** {estimasi_selesai_transfer}")
 
-        if jenis == "Gesek Kotor":
-            nominal_transfer = int(nominal * rate - biaya_total)
-            st.write(f"**Nominal Transaksi:** Rp {format_rupiah(nominal)}")
-            st.write(f"**Nominal Transfer:** Rp {format_rupiah(nominal_transfer)}")
+        if metode_rate == "Persentase (%)":
+            st.write(f"**Rate Jual:** {tampilkan_rate(rate)}")
+            if jenis == "Gesek Kotor":
+                nominal_transfer = int(nominal * rate - biaya_total)
+                st.write(f"**Nominal Transaksi:** Rp {format_rupiah(nominal)}")
+                st.write(f"**Nominal Transfer:** Rp {format_rupiah(nominal_transfer)}")
+            else:
+                nominal_transaksi = int((nominal + biaya_total) / rate)
+                st.write(f"**Nominal Transfer:** Rp {format_rupiah(nominal)}")
+                st.write(f"**Nominal Transaksi:** Rp {format_rupiah(nominal_transaksi)}")
+
         else:
-            nominal_transaksi = int((nominal + biaya_total) / rate)
-            st.write(f"**Nominal Transfer:** Rp {format_rupiah(nominal)}")
-            st.write(f"**Nominal Transaksi:** Rp {format_rupiah(nominal_transaksi)}")
+            st.write(f"**Rate Flat:** Rp {format_rupiah(rate_flat)}")
+            if jenis == "Gesek Kotor":
+                nominal_transfer = int(nominal - rate_flat - biaya_total)
+                st.write(f"**Nominal Transaksi:** Rp {format_rupiah(nominal)}")
+                st.write(f"**Nominal Transfer:** Rp {format_rupiah(nominal_transfer)}")
+            else:
+                nominal_transaksi = int(nominal + rate_flat + biaya_total)
+                st.write(f"**Nominal Transfer:** Rp {format_rupiah(nominal)}")
+                st.write(f"**Nominal Transaksi:** Rp {format_rupiah(nominal_transaksi)}")
