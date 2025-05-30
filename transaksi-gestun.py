@@ -91,20 +91,20 @@ if menu == "Hitung Nominal Transaksi":
 
         with col2:
             st.subheader("📊 Hasil Perhitungan")
-            st.write(f"**Jenis Perhitungan:** {jenis}")
-            st.write(f"**Rate Jual:** {tampilkan_rate(rate)}")
-            st.write(f"**Fee (tanpa biaya tambahan):** Rp {format_rupiah(fee)}")
-            st.write(f"**Biaya Tambahan Total:** Rp {format_rupiah(biaya_total)}")
-            st.write(f"**Estimasi Selesai Transfer:** {estimasi_selesai_transfer}")
+            st.write(f"**➤Jenis Perhitungan:** {jenis}")
+            st.write(f"**➤Rate Jual:** {tampilkan_rate(rate)}")
+            st.write(f"**➤Fee (tanpa biaya tambahan):** Rp {format_rupiah(fee)}")
+            st.write(f"**➤Biaya Tambahan Total:** Rp {format_rupiah(biaya_total)}")
+            st.write(f"**➤Estimasi Selesai Transfer:** {estimasi_selesai_transfer}")
 
             if jenis == "Gesek Kotor":
                 nominal_transfer = int(nominal * rate - biaya_total)
-                st.write(f"**Nominal Transaksi:** Rp {format_rupiah(nominal)}")
-                st.write(f"**Nominal Transfer (setelah biaya):** Rp {format_rupiah(nominal_transfer)}")
+                st.write(f"**➤Nominal Transaksi:** Rp {format_rupiah(nominal)}")
+                st.write(f"**➤Nominal Transfer (setelah biaya):** Rp {format_rupiah(nominal_transfer)}")
             else:
                 nominal_transaksi = int((nominal + biaya_total) / rate)
-                st.write(f"**Nominal Transfer:** Rp {format_rupiah(nominal)}")
-                st.write(f"**Nominal Transaksi:** Rp {format_rupiah(nominal_transaksi)}")
+                st.write(f"**➤Nominal Transfer:** Rp {format_rupiah(nominal)}")
+                st.write(f"**➤Nominal Transaksi:** Rp {format_rupiah(nominal_transaksi)}")
 
 elif menu == "Estimasi Transfer":
     st.header("🕒 Estimasi Waktu Transfer")
@@ -115,6 +115,6 @@ elif menu == "Estimasi Transfer":
     waktu_selesai = estimasi_selesai(waktu_mulai, durasi)
 
     st.subheader("Hasil Estimasi")
-    st.write(f"**Layanan Transfer:** {layanan}")
-    st.write(f"**Waktu Mulai:** {waktu_mulai.strftime('%H:%M')}")
-    st.write(f"**Perkiraan Selesai:** {waktu_selesai}")
+    st.write(f"**➤Layanan Transfer:** {layanan}")
+    st.write(f"**➤Waktu Mulai:** {waktu_mulai.strftime('%H:%M')}")
+    st.write(f"**➤Perkiraan Selesai:** {waktu_selesai}")
