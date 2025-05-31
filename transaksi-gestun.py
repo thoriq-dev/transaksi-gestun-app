@@ -102,7 +102,8 @@ if menu == "Hitung Nominal Transaksi":
                 st.write(f"**➤Nominal Transaksi:** Rp {format_rupiah(nominal)}")
                 st.write(f"**➤Nominal Transfer (setelah biaya):** Rp {format_rupiah(nominal_transfer)}")
             else:
-                nominal_transaksi = int((nominal + biaya_total) / rate)
+                fee = int(nominal / rate - nominal)
+                nominal_transaksi = nominal + fee + biaya_total
                 st.write(f"**➤Nominal Transfer:** Rp {format_rupiah(nominal)}")
                 st.write(f"**➤Nominal Transaksi:** Rp {format_rupiah(nominal_transaksi)}")
 
