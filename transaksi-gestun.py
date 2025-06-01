@@ -33,8 +33,6 @@ st.title("🔢 Hitung Nominal & Estimasi Transfer Gestun")
 
 menu = st.sidebar.selectbox("Pilih Menu", [
     "Hitung Nominal Transaksi",
-    "Estimasi Transfer",
-    "Perhitungan Lengkap Gestun (MDR)"
 ])
 
 if menu == "Hitung Nominal Transaksi":
@@ -97,71 +95,17 @@ if menu == "Hitung Nominal Transaksi":
             st.subheader("📊 Hasil Perhitungan")
             st.write(f"**➤Jenis Perhitungan:** {jenis}")
             st.write(f"**➤Rate Jual:** {tampilkan_rate(rate)}")
-            st.write(f"**➤Fee (tanpa biaya tambahan):** Rp {format_rupiah(fee)}")
             st.write(f"**➤Biaya Tambahan Total:** Rp {format_rupiah(biaya_total)}")
-            st.write(f"**➤Estimasi Selesai Transfer:** {estimasi_selesai_transfer}")
-
             if jenis == "Gesek Kotor":
                 nominal_transfer = int(nominal * rate - biaya_total)
+                st.write(f"**➤Nominal Transfer:** Rp {format_rupiah(nominal_transfer)}")
                 st.write(f"**➤Nominal Transaksi:** Rp {format_rupiah(nominal)}")
-                st.write(f"**➤Nominal Transfer (setelah biaya):** Rp {format_rupiah(nominal_transfer)}")
             else:
                 fee = int(nominal / rate - nominal)
                 nominal_transaksi = nominal + fee + biaya_total
                 st.write(f"**➤Nominal Transfer:** Rp {format_rupiah(nominal)}")
                 st.write(f"**➤Nominal Transaksi:** Rp {format_rupiah(nominal_transaksi)}")
+            st.write(f"**➤Waktu Transaksi:** {waktu_mulai.strftime('%H:%M')}")
+            st.write(f"**➤Waktu Estimasi Transfer:** {estimasi_selesai_transfer}")
 
-elif menu == "Estimasi Transfer":
-    st.header("🕒 Estimasi Waktu Transfer")
-    layanan = st.selectbox("Pilih Layanan Transfer:", ["Normal", "Kilat", "Super Kilat"])
-
-    waktu_mulai = datetime.now(ZoneInfo("Asia/Jakarta"))
-    durasi = estimasi_durasi(layanan)
-    waktu_selesai = estimasi_selesai(waktu_mulai, durasi)
-
-    st.subheader("Hasil Estimasi")
-    st.write(f"**➤Layanan Transfer:** {layanan}")
-    st.write(f"**➤Waktu Mulai:** {waktu_mulai.strftime('%H:%M')}")
-    st.write(f"**➤Perkiraan Selesai:** {waktu_selesai}")
-
-elif menu == "Perhitungan Lengkap Gestun (MDR)":
-    st.header("📋 Perhitungan Lengkap Gestun (MDR Otomatis)")
-
-    # Input data
-    jenis = st.radio("Pilih Jenis Perhitungan:", ["Gesek Kotor", "Gesek Bersih"])
-    bank_edc = st.selectbox("Pilih Bank EDC:", ["BNI", "BCA", "BRI"])
-    status_kartu = st.radio("Status Kartu:", ["On Us", "Off Us"])
-    nominal = st.number_input("Masukkan Nominal Transaksi (Rp):", min_value=0, step=10000)
-    rate_jual = st.slider("Pilih Rate Jual (%):", min_value=2.0, max_value=9.0, step=0.1)  # Slider interaktif
-
-    # MDR Rates
-    mdr_rates = {
-        "BNI": {"On Us": 1.65, "Off Us": 1.85},
-        "BCA": {"On Us": 1.5, "Off Us": 2.0},
-        "BRI": {"On Us": 1.5, "Off Us": 1.8},
-    }
-
-    if nominal > 0:
-        mdr = mdr_rates[bank_edc][status_kartu]
-        fee = nominal * (rate_jual / 100)
-        potongan_mdr = nominal * (mdr / 100)
-        dana_masuk = nominal - potongan_mdr
-
-        if jenis == "Gesek Kotor":
-            dana_ke_nasabah = nominal - fee
-        else:  # Gesek Bersih
-            dana_ke_nasabah = nominal
-
-        laba_kotor = dana_masuk - dana_ke_nasabah
-
-        st.subheader("📊 Hasil Perhitungan")
-        st.write(f"**➤Bank EDC:** {bank_edc}")
-        st.write(f"**➤Status Kartu:** {status_kartu}")
-        st.write(f"**➤MDR:** {mdr}%")
-        st.write(f"**➤Rate Jual:** {rate_jual}%")
-        st.write(f"**➤Nominal Transaksi:** Rp {format_rupiah(nominal)}")
-        st.write(f"**➤Fee dari Rate Jual:** Rp {format_rupiah(fee)}")
-        st.write(f"**➤Potongan MDR:** Rp {format_rupiah(potongan_mdr)}")
-        st.write(f"**➤Dana Masuk ke Rekening:** Rp {format_rupiah(dana_masuk)}")
-        st.write(f"**➤Dana Diberikan ke Nasabah:** Rp {format_rupiah(dana_ke_nasabah)}")
-        st.success(f"💸 Laba Kotor: Rp {format_rupiah(laba_kotor)}")
+          
