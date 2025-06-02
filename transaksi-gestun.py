@@ -19,7 +19,7 @@ def format_rupiah(nominal):
     return f"Rp {int(nominal):,}".replace(",", ".")
 
 def tampilkan_rate(rate):
-    return f"{int((1 - rate) * 1000) / 10}%"  # contoh: 0.975 -> 2.5%
+    return f"{int((1 - rate) * 1000) / 10}%"
 
 def hitung_fee(jenis, nominal, rate):
     if jenis == "Gesek Kotor":
@@ -39,7 +39,7 @@ def hitung_pembagian_edc_prioritas(total_transaksi, mesin_edc):
             break
     return pembagian, sisa
 
-# --- Antarmuka Web Streamlit ---
+# --- Setup UI Streamlit ---
 st.set_page_config(page_title="Estimasi & Hitung Gestun", layout="centered")
 st.title("🔢 Hitung Nominal & Estimasi Transfer Gestun")
 
@@ -48,11 +48,14 @@ menu = st.sidebar.selectbox("Pilih Menu", [
     "Pembagian Transaksi EDC"
 ])
 
+# ===============================
+# MENU 1: HITUNG NOMINAL TRANSAKSI
+# ===============================
 if menu == "Hitung Nominal Transaksi":
     st.header("💰 Hitung Nominal Transaksi")
 
+    # Pilihan jenis & rate
     jenis = st.radio("Pilih Jenis Perhitungan:", ["Gesek Kotor", "Gesek Bersih"])
-
     rate_dict = {
         "2.5% (0.975) Visa & Master Card": 0.975,
         "2.6% (0.974) Visa & Master Card": 0.974,
@@ -62,16 +65,36 @@ if menu == "Hitung Nominal Transaksi":
     rate_label = st.selectbox("Pilih Rate Jual:", list(rate_dict.keys()))
     rate = rate_dict[rate_label]
 
-    nominal = st.number_input(
-        f"Masukkan nominal {'transaksi' if jenis == 'Gesek Kotor' else 'transfer'} (Rp):",
-        min_value=0,
-        step=10000
+    # --- Callback untuk memformat input secara real-time ---
+    def format_nominal():
+        txt = st.session_state.nominal_input
+        digits_only = "".join([c for c in txt if c.isdigit()])
+        if digits_only:
+            st.session_state.nominal_input = "{:,}".format(int(digits_only)).replace(",", ".")
+        else:
+            st.session_state.nominal_input = ""
+
+    # Inisialisasi session_state (hanya sekali)
+    if "nominal_input" not in st.session_state:
+        st.session_state.nominal_input = ""
+
+    # Text input yang memanggil callback format_nominal
+    st.text_input(
+        label=f"Masukkan nominal {'transaksi' if jenis == 'Gesek Kotor' else 'transfer'} (Rp):",
+        key="nominal_input",
+        on_change=format_nominal,
     )
 
-    if nominal > 0:
-        fee = hitung_fee(jenis, nominal, rate)
-        st.info(f"📌 Fee {tampilkan_rate(rate)} dari Rp {format_rupiah(nominal)} adalah Rp {format_rupiah(fee)}")
+    # Konversi ke integer (tanpa titik)
+    raw = st.session_state.nominal_input.replace(".", "")
+    if raw.isdigit():
+        nominal_int = int(raw)
+    else:
+        nominal_int = 0
 
+    st.write(f"▶️ Nilai sebenarnya (tanpa format): {nominal_int}")
+
+    # Pilihan Biaya Tambahan & Layanan Transfer
     biaya_opsi = {
         "Biaya administrasi nasabah baru (Rp10.000)": 10000,
         "Biaya layanan super kilat (Rp18.000)": 18000,
@@ -79,84 +102,96 @@ if menu == "Hitung Nominal Transaksi":
         "Biaya transfer beda bank (Rp10.000)": 10000,
         "Tidak ada tambahan biaya layanan": 0
     }
-
-    layanan_transfer = st.selectbox("Pilih Layanan Transfer:", [
-        "Normal", "Kilat", "Super Kilat"
-    ])
-
-    biaya_tambahan_opsi = [k for k in biaya_opsi if "layanan kilat" not in k and "super kilat" not in k and "Tidak ada" not in k]
+    layanan_transfer = st.selectbox("Pilih Layanan Transfer:", ["Normal", "Kilat", "Super Kilat"])
+    biaya_tambahan_opsi = [
+        k for k in biaya_opsi
+        if "layanan kilat" not in k.lower()
+        and "super kilat" not in k.lower()
+        and "tidak ada" not in k.lower()
+    ]
     biaya_pilihan = st.multiselect("Pilih Biaya Tambahan Lainnya:", biaya_tambahan_opsi)
-    biaya_total = sum([biaya_opsi[b] for b in biaya_pilihan])
-
+    biaya_total = sum(biaya_opsi[b] for b in biaya_pilihan)
     if layanan_transfer == "Kilat":
         biaya_total += biaya_opsi["Biaya layanan kilat (Rp15.000)"]
     elif layanan_transfer == "Super Kilat":
         biaya_total += biaya_opsi["Biaya layanan super kilat (Rp18.000)"]
 
-if st.button("Hitung Sekarang"):
-    waktu_mulai = datetime.now(ZoneInfo("Asia/Jakarta"))
-    estimasi_selesai_transfer = estimasi_selesai(
-        waktu_mulai, estimasi_durasi(layanan_transfer)
-    )
+    st.write(f"▶️ Total Biaya Tambahan: {format_rupiah(biaya_total)}")
 
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        # Judul hasil perhitungan dibuat lebih besar
-        st.markdown(
-            "<h2 style='text-align: center;'>📊 Hasil Perhitungan</h2>",
-            unsafe_allow_html=True
+    # --- Tombol Hitung Sekarang (harus di dalam blok ini) ---
+    if st.button("Hitung Sekarang"):
+        # Waktu mulai & estimasi selesai
+        waktu_mulai = datetime.now(ZoneInfo("Asia/Jakarta"))
+        estimasi_selesai_transfer = estimasi_selesai(
+            waktu_mulai, estimasi_durasi(layanan_transfer)
         )
 
-        # Contoh memperbesar setiap baris informasi
-        st.markdown(
-            f"<p style='font-size:1.35rem;'><strong>➤ Jenis Perhitungan:</strong> {jenis}</p>",
-            unsafe_allow_html=True
-        )
-        st.markdown(
-            f"<p style='font-size:1.35rem;'><strong>➤ Rate Jual:</strong> {tampilkan_rate(rate)}</p>",
-            unsafe_allow_html=True
-        )
-        st.markdown(
-            f"<p style='font-size:1.35rem;'><strong>➤ Biaya Tambahan Total:</strong> {format_rupiah(biaya_total)}</p>",
-            unsafe_allow_html=True
-        )
-
-        if jenis == "Gesek Kotor":
-            nominal_transfer = int(nominal * rate - biaya_total)
+        # Kita buat 3 kolom supaya hasilnya di-tengah
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
             st.markdown(
-                f"<p style='font-size:1.35rem;'><strong>➤ Nominal Transfer:</strong> {format_rupiah(nominal_transfer)}</p>",
+                "<h2 style='text-align: center;'>📊 Hasil Perhitungan</h2>",
                 unsafe_allow_html=True
             )
             st.markdown(
-                f"<p style='font-size:1.35rem;'><strong>➤ Nominal Transaksi:</strong> {format_rupiah(nominal)}</p>",
-                unsafe_allow_html=True
-            )
-        else:
-            fee = int(nominal / rate - nominal)
-            nominal_transaksi = nominal + fee + biaya_total
-            st.markdown(
-                f"<p style='font-size:1.35rem;'><strong>➤ Nominal Transfer:</strong> {format_rupiah(nominal)}</p>",
+                f"<p style='font-size:1.35rem;'><strong>➤ Jenis Perhitungan:</strong> {jenis}</p>",
                 unsafe_allow_html=True
             )
             st.markdown(
-                f"<p style='font-size:1.35rem;'><strong>➤ Nominal Transaksi:</strong> {format_rupiah(nominal_transaksi)}</p>",
+                f"<p style='font-size:1.35rem;'><strong>➤ Rate Jual:</strong> {tampilkan_rate(rate)}</p>",
+                unsafe_allow_html=True
+            )
+            st.markdown(
+                f"<p style='font-size:1.35rem;'><strong>➤ Biaya Tambahan Total:</strong> {format_rupiah(biaya_total)}</p>",
                 unsafe_allow_html=True
             )
 
-        st.markdown(
-            f"<p style='font-size:1.35rem;'><strong>➤ Waktu Transaksi:</strong> {waktu_mulai.strftime('%H:%M')}</p>",
-            unsafe_allow_html=True
-        )
-        st.markdown(
-            f"<p style='font-size:1.35rem;'><strong>➤ Waktu Estimasi Transfer:</strong> {estimasi_selesai_transfer}</p>",
-            unsafe_allow_html=True
-        )
+            if nominal_int > 0:
+                if jenis == "Gesek Kotor":
+                    nominal_transfer = int(nominal_int * rate - biaya_total)
+                    st.markdown(
+                        f"<p style='font-size:1.35rem;'><strong>➤ Nominal Transfer:</strong> {format_rupiah(nominal_transfer)}</p>",
+                        unsafe_allow_html=True
+                    )
+                    st.markdown(
+                        f"<p style='font-size:1.35rem;'><strong>➤ Nominal Transaksi:</strong> {format_rupiah(nominal_int)}</p>",
+                        unsafe_allow_html=True
+                    )
+                else:  # Gesek Bersih
+                    fee = int(nominal_int / rate - nominal_int)
+                    nominal_transaksi = nominal_int + fee + biaya_total
+                    st.markdown(
+                        f"<p style='font-size:1.35rem;'><strong>➤ Nominal Transfer:</strong> {format_rupiah(nominal_int)}</p>",
+                        unsafe_allow_html=True
+                    )
+                    st.markdown(
+                        f"<p style='font-size:1.35rem;'><strong>➤ Nominal Transaksi:</strong> {format_rupiah(nominal_transaksi)}</p>",
+                        unsafe_allow_html=True
+                    )
 
+                st.markdown(
+                    f"<p style='font-size:1.35rem;'><strong>➤ Waktu Transaksi:</strong> {waktu_mulai.strftime('%H:%M')}</p>",
+                    unsafe_allow_html=True
+                )
+                st.markdown(
+                    f"<p style='font-size:1.35rem;'><strong>➤ Waktu Estimasi Transfer:</strong> {estimasi_selesai_transfer}</p>",
+                    unsafe_allow_html=True
+                )
+            else:
+                st.error("Masukkan nominal transaksi/transf sebesar lebih dari 0 terlebih dahulu.")
+
+# =================================
+# MENU 2: PEMBAGIAN TRANSAKSI EDC
+# =================================
 elif menu == "Pembagian Transaksi EDC":
     st.header("🧮 Pembagian Transaksi ke Mesin EDC")
 
-    total_transaksi = st.number_input("Masukkan Total Transaksi (Rp)", min_value=0, step=1_000_000, format="%d")
-    jumlah_mesin = st.number_input("Masukkan Jumlah Mesin EDC", min_value=1, max_value=20, step=1)
+    total_transaksi = st.number_input(
+        "Masukkan Total Transaksi (Rp)", min_value=0, step=1_000_000, format="%d"
+    )
+    jumlah_mesin = st.number_input(
+        "Masukkan Jumlah Mesin EDC", min_value=1, max_value=20, step=1
+    )
 
     st.subheader("Input Detail Setiap Mesin EDC")
 
@@ -178,8 +213,8 @@ elif menu == "Pembagian Transaksi EDC":
     if st.button("Hitung Pembagian"):
         pembagian, sisa = hitung_pembagian_edc_prioritas(total_transaksi, mesin_edc)
         st.subheader("Hasil Pembagian:")
-        for nama, nominal in pembagian:
-            st.write(f"{nama}: {format_rupiah(nominal)}")
+        for nama_mesin, nominal_edc in pembagian:
+            st.write(f"{nama_mesin}: {format_rupiah(nominal_edc)}")
         if sisa > 0:
             st.warning(f"Sisa yang belum terbagi: {format_rupiah(sisa)}")
         else:
