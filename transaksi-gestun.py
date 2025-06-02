@@ -92,8 +92,6 @@ if menu == "Hitung Nominal Transaksi":
     else:
         nominal_int = 0
 
-    st.write(f"▶️ Nilai sebenarnya (tanpa format): {nominal_int}")
-
     # Pilihan Biaya Tambahan & Layanan Transfer
     biaya_opsi = {
         "Biaya administrasi nasabah baru (Rp10.000)": 10000,
