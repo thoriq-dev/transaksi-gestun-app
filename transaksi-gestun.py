@@ -109,46 +109,46 @@ if st.button("Hitung Sekarang"):
 
         # Contoh memperbesar setiap baris informasi
         st.markdown(
-            f"<p style='font-size:1.25rem;'><strong>➤ Jenis Perhitungan:</strong> {jenis}</p>",
+            f"<p style='font-size:1.50rem;'><strong>➤ Jenis Perhitungan:</strong> {jenis}</p>",
             unsafe_allow_html=True
         )
         st.markdown(
-            f"<p style='font-size:1.25rem;'><strong>➤ Rate Jual:</strong> {tampilkan_rate(rate)}</p>",
+            f"<p style='font-size:1.50rem;'><strong>➤ Rate Jual:</strong> {tampilkan_rate(rate)}</p>",
             unsafe_allow_html=True
         )
         st.markdown(
-            f"<p style='font-size:1.25rem;'><strong>➤ Biaya Tambahan Total:</strong> {format_rupiah(biaya_total)}</p>",
+            f"<p style='font-size:1.50rem;'><strong>➤ Biaya Tambahan Total:</strong> {format_rupiah(biaya_total)}</p>",
             unsafe_allow_html=True
         )
 
         if jenis == "Gesek Kotor":
             nominal_transfer = int(nominal * rate - biaya_total)
             st.markdown(
-                f"<p style='font-size:1.25rem;'><strong>➤ Nominal Transfer:</strong> {format_rupiah(nominal_transfer)}</p>",
+                f"<p style='font-size:1.50rem;'><strong>➤ Nominal Transfer:</strong> {format_rupiah(nominal_transfer)}</p>",
                 unsafe_allow_html=True
             )
             st.markdown(
-                f"<p style='font-size:1.25rem;'><strong>➤ Nominal Transaksi:</strong> {format_rupiah(nominal)}</p>",
+                f"<p style='font-size:1.50rem;'><strong>➤ Nominal Transaksi:</strong> {format_rupiah(nominal)}</p>",
                 unsafe_allow_html=True
             )
         else:
             fee = int(nominal / rate - nominal)
             nominal_transaksi = nominal + fee + biaya_total
             st.markdown(
-                f"<p style='font-size:1.25rem;'><strong>➤ Nominal Transfer:</strong> {format_rupiah(nominal)}</p>",
+                f"<p style='font-size:1.50rem;'><strong>➤ Nominal Transfer:</strong> {format_rupiah(nominal)}</p>",
                 unsafe_allow_html=True
             )
             st.markdown(
-                f"<p style='font-size:1.25rem;'><strong>➤ Nominal Transaksi:</strong> {format_rupiah(nominal_transaksi)}</p>",
+                f"<p style='font-size:1.50rem;'><strong>➤ Nominal Transaksi:</strong> {format_rupiah(nominal_transaksi)}</p>",
                 unsafe_allow_html=True
             )
 
         st.markdown(
-            f"<p style='font-size:1.25rem;'><strong>➤ Waktu Transaksi:</strong> {waktu_mulai.strftime('%H:%M')}</p>",
+            f"<p style='font-size:1.50rem;'><strong>➤ Waktu Transaksi:</strong> {waktu_mulai.strftime('%H:%M')}</p>",
             unsafe_allow_html=True
         )
         st.markdown(
-            f"<p style='font-size:1.25rem;'><strong>➤ Waktu Estimasi Transfer:</strong> {estimasi_selesai_transfer}</p>",
+            f"<p style='font-size:1.50rem;'><strong>➤ Waktu Estimasi Transfer:</strong> {estimasi_selesai_transfer}</p>",
             unsafe_allow_html=True
         )
 
