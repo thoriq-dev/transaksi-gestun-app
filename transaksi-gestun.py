@@ -85,14 +85,12 @@ if menu == "Hitung Nominal Transaksi":
         on_change=format_nominal,
     )
 
-    # Konversi ke integer (tanpa titik)
+    # <<–– Blok konversi harus tetap ada ––>>
     raw = st.session_state.nominal_input.replace(".", "")
     if raw.isdigit():
         nominal_int = int(raw)
     else:
         nominal_int = 0
-
-   
 
     # Pilihan Biaya Tambahan & Layanan Transfer
     biaya_opsi = {
@@ -120,13 +118,11 @@ if menu == "Hitung Nominal Transaksi":
 
     # --- Tombol Hitung Sekarang (harus di dalam blok ini) ---
     if st.button("Hitung Sekarang"):
-        # Waktu mulai & estimasi selesai
         waktu_mulai = datetime.now(ZoneInfo("Asia/Jakarta"))
         estimasi_selesai_transfer = estimasi_selesai(
             waktu_mulai, estimasi_durasi(layanan_transfer)
         )
 
-        # Kita buat 3 kolom supaya hasilnya di-tengah
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
             st.markdown(
@@ -194,7 +190,6 @@ elif menu == "Pembagian Transaksi EDC":
     )
 
     st.subheader("Input Detail Setiap Mesin EDC")
-
     mesin_edc = []
     for i in range(jumlah_mesin):
         col1, col2, col3 = st.columns([2, 2, 1])
