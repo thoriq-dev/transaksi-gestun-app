@@ -93,27 +93,64 @@ if menu == "Hitung Nominal Transaksi":
     elif layanan_transfer == "Super Kilat":
         biaya_total += biaya_opsi["Biaya layanan super kilat (Rp18.000)"]
 
-    if st.button("Hitung Sekarang"):
-        waktu_mulai = datetime.now(ZoneInfo("Asia/Jakarta"))
-        estimasi_selesai_transfer = estimasi_selesai(waktu_mulai, estimasi_durasi(layanan_transfer))
+if st.button("Hitung Sekarang"):
+    waktu_mulai = datetime.now(ZoneInfo("Asia/Jakarta"))
+    estimasi_selesai_transfer = estimasi_selesai(
+        waktu_mulai, estimasi_durasi(layanan_transfer)
+    )
 
-        col1, col2, col3 = st.columns([1, 2, 1])
-        with col2:
-            st.subheader("📊 Hasil Perhitungan")
-            st.write(f"**➤Jenis Perhitungan:** {jenis}")
-            st.write(f"**➤Rate Jual:** {tampilkan_rate(rate)}")
-            st.write(f"**➤Biaya Tambahan Total:** {format_rupiah(biaya_total)}")
-            if jenis == "Gesek Kotor":
-                nominal_transfer = int(nominal * rate - biaya_total)
-                st.write(f"**➤Nominal Transfer:** {format_rupiah(nominal_transfer)}")
-                st.write(f"**➤Nominal Transaksi:** {format_rupiah(nominal)}")
-            else:
-                fee = int(nominal / rate - nominal)
-                nominal_transaksi = nominal + fee + biaya_total
-                st.write(f"**➤Nominal Transfer:** {format_rupiah(nominal)}")
-                st.write(f"**➤Nominal Transaksi:** {format_rupiah(nominal_transaksi)}")
-            st.write(f"**➤Waktu Transaksi:** {waktu_mulai.strftime('%H:%M')}")
-            st.write(f"**➤Waktu Estimasi Transfer:** {estimasi_selesai_transfer}")
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        # Judul hasil perhitungan dibuat lebih besar
+        st.markdown(
+            "<h2 style='text-align: center;'>📊 Hasil Perhitungan</h2>",
+            unsafe_allow_html=True
+        )
+
+        # Contoh memperbesar setiap baris informasi
+        st.markdown(
+            f"<p style='font-size:1.25rem;'><strong>➤ Jenis Perhitungan:</strong> {jenis}</p>",
+            unsafe_allow_html=True
+        )
+        st.markdown(
+            f"<p style='font-size:1.25rem;'><strong>➤ Rate Jual:</strong> {tampilkan_rate(rate)}</p>",
+            unsafe_allow_html=True
+        )
+        st.markdown(
+            f"<p style='font-size:1.25rem;'><strong>➤ Biaya Tambahan Total:</strong> {format_rupiah(biaya_total)}</p>",
+            unsafe_allow_html=True
+        )
+
+        if jenis == "Gesek Kotor":
+            nominal_transfer = int(nominal * rate - biaya_total)
+            st.markdown(
+                f"<p style='font-size:1.25rem;'><strong>➤ Nominal Transfer:</strong> {format_rupiah(nominal_transfer)}</p>",
+                unsafe_allow_html=True
+            )
+            st.markdown(
+                f"<p style='font-size:1.25rem;'><strong>➤ Nominal Transaksi:</strong> {format_rupiah(nominal)}</p>",
+                unsafe_allow_html=True
+            )
+        else:
+            fee = int(nominal / rate - nominal)
+            nominal_transaksi = nominal + fee + biaya_total
+            st.markdown(
+                f"<p style='font-size:1.25rem;'><strong>➤ Nominal Transfer:</strong> {format_rupiah(nominal)}</p>",
+                unsafe_allow_html=True
+            )
+            st.markdown(
+                f"<p style='font-size:1.25rem;'><strong>➤ Nominal Transaksi:</strong> {format_rupiah(nominal_transaksi)}</p>",
+                unsafe_allow_html=True
+            )
+
+        st.markdown(
+            f"<p style='font-size:1.25rem;'><strong>➤ Waktu Transaksi:</strong> {waktu_mulai.strftime('%H:%M')}</p>",
+            unsafe_allow_html=True
+        )
+        st.markdown(
+            f"<p style='font-size:1.25rem;'><strong>➤ Waktu Estimasi Transfer:</strong> {estimasi_selesai_transfer}</p>",
+            unsafe_allow_html=True
+        )
 
 elif menu == "Pembagian Transaksi EDC":
     st.header("🧮 Pembagian Transaksi ke Mesin EDC")
