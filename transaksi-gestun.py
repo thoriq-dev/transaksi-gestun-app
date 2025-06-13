@@ -1,6 +1,8 @@
 import streamlit as st
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo  # Python 3.9+
+import streamlit.components.v1 as components
+
 
 # --- Fungsi Pendukung ---
 def estimasi_durasi(layanan):
@@ -17,6 +19,11 @@ def estimasi_selesai(waktu_mulai, durasi):
 
 def format_rupiah(nominal):
     return f"Rp {int(nominal):,}".replace(",", ".")
+
+def format_rupiah_input(key):
+    txt = st.session_state.get(key, "")
+    digits = "".join([c for c in txt if c.isdigit()])
+    st.session_state[key] = "{:,}".format(int(digits)).replace(",", ".") if digits else ""
 
 def tampilkan_rate(rate):
     return f"{int((1 - rate) * 1000) / 10}%"
@@ -39,13 +46,20 @@ def hitung_pembagian_edc_prioritas(total_transaksi, mesin_edc):
             break
     return pembagian, sisa
 
-# --- Setup UI Streamlit ---
-st.set_page_config(page_title="Estimasi & Hitung Gestun", layout="centered")
-st.title("🔢 Hitung Nominal & Estimasi Transfer Gestun")
+# Helper: format Rupiah without decimals and with dot as thousand separator
+def fmt_rp(val):
+    return f"Rp. {int(val):,}".replace(",", ".")
+
+# Helper Format Nomor Transaksi
+def fmt_heading(t): return f'*{t}*' if bold_headings else t
+
+# --- App Config ---
+st.set_page_config(page_title="Input Data Transaksi Gestun", layout="centered")
 
 menu = st.sidebar.selectbox("Pilih Menu", [
     "Hitung Nominal Transaksi",
-    "Pembagian Transaksi EDC"
+    "Pembagian Transaksi EDC",
+    "Input Data Transaksi Gestun"
 ])
 
 # ===============================
@@ -214,3 +228,88 @@ elif menu == "Pembagian Transaksi EDC":
             st.warning(f"Sisa yang belum terbagi: {format_rupiah(sisa)}")
         else:
             st.success("Semua transaksi sudah terbagi ke mesin EDC.")
+
+# =============================================
+# MENU 3: INPUT DATA TRANSAKSI GESTUN
+# =============================================
+elif menu == "Input Data Transaksi Gestun":
+    st.title("Form Input Data Transaksi Gestun")
+    # Formatting options
+    bold_headings = st.sidebar.checkbox("Bold Headings", True)
+    italic_values = st.sidebar.checkbox("Italic Values", False)
+
+    with st.form(key='form3'):
+        transaksi_no = st.text_input("No. Transaksi")
+        nama = st.text_input("Nama Nasabah")
+        jenis = st.selectbox("Jenis Nasabah", ["Langganan","Baru"])
+        kelas = st.selectbox("Kelas Nasabah", [
+            "Non Member","Member Gold",
+            "Member Platinum","Member Anggota Koperasi"
+        ])
+        st.markdown("---")
+        j_g = st.radio("Jenis Gestun", ["Kotor","Bersih"])
+        metode = st.selectbox("Metode Gestun", ["Online","Konven"])
+        lay = st.selectbox("Jenis Layanan Transfer", ["Normal","Kilat","Super Kilat"])
+        prod = st.text_input("Produk & Sub Produk")
+        rt_type = st.selectbox("Tipe Rate Jual", ["Rp","%"])
+        if rt_type == "Rp":
+            rt_val = st.number_input("Rate Jual (Rp)", min_value=0, step=100, format="%d")
+            rt_str = format_rupiah(rt_val)
+        else:
+            rt_str = st.selectbox("Rate Jual (%)", ["2.6%","2.5%","3.5%"])
+        st.markdown("---")
+        jt = st.number_input("Jumlah Transaksi (Rp)", min_value=0, step=100, format="%d")
+        bl = st.number_input("Biaya Layanan (Rp)", min_value=0, step=100, format="%d")
+        ket = st.text_area("Keterangan Layanan", height=80)
+        trf = st.number_input("Jumlah Transfer (Rp)", min_value=0, step=100, format="%d")
+        submit = st.form_submit_button("Generate WhatsApp Text")
+
+    if submit:
+        # Helpers
+        def fmt_heading(text):
+            return f"*{text}*" if bold_headings else text
+        def fmt_value(text):
+            return f"_{text}_" if italic_values else text
+        bullet = "•"
+        sep = "_______________________________"
+        # Build output
+        teks_output = f"""
+{bullet} {fmt_heading(f"TRANSAKSI NO. {transaksi_no}")}
+{sep}
+{bullet} {fmt_heading('DATA NASABAH')}
+   {bullet} Nama Nasabah   : {fmt_value(nama)}
+   {bullet} Jenis Nasabah  : {fmt_value(jenis)}
+   {bullet} Kelas Nasabah  : {fmt_value(kelas)}
+{sep}
+{bullet} {fmt_heading('DATA TRANSAKSI')}
+   {bullet} Jenis Gestun          : {fmt_value(j_g)}
+   {bullet} Metode Gestun         : {fmt_value(metode)}
+   {bullet} Jenis Layanan Transfer: {fmt_value(lay)}
+   {bullet} Produk & Sub Produk   : {fmt_value(prod)}
+   {bullet} Rate Jual             : {fmt_value(rt_str)}
+{sep}
+{bullet} {fmt_heading('RANGKUMAN BIAYA DAN TRANSAKSI')}
+   {bullet} Jumlah Transaksi : {fmt_value(format_rupiah(jt))}
+   {bullet} Biaya Layanan    : {fmt_value(format_rupiah(bl))}
+   {bullet} Keterangan Layanan: {fmt_value(ket)}
+{sep}
+{bullet} {fmt_heading(f"Jumlah Transfer {format_rupiah(trf)}")}
+"""
+        # Display copyable text
+        st.text_area("Hasil (copyable ke WhatsApp):", teks_output, height=350)
+        # Prepare print section
+        st.markdown(f"""
+<div id="print-section">
+<pre>{teks_output}</pre>
+</div>
+""", unsafe_allow_html=True)
+        # Print button
+        components.html(
+            '''
+            <button type="button" style="padding:8px 16px; font-size:1rem; margin-top:10px;"
+                onclick="var content = window.top.document.getElementById('print-section').innerHTML; var w=window.open(); w.document.write(content); w.document.close(); w.focus(); w.print(); w.close();">
+                Print
+            </button>
+            ''',
+            height=80
+        )
