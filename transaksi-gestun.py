@@ -237,6 +237,7 @@ elif menu == "Input Data Transaksi Gestun":
     # Formatting options
     bold_headings = st.sidebar.checkbox("Bold Headings", True)
     italic_values = st.sidebar.checkbox("Italic Values", False)
+    bold_values = st.sidebar.checkbox("Bold Values", False)
 
     with st.form(key='form3'):
         transaksi_no = st.text_input("No. Transaksi")
@@ -248,7 +249,7 @@ elif menu == "Input Data Transaksi Gestun":
         ])
         st.markdown("---")
         j_g = st.radio("Jenis Gestun", ["Kotor","Bersih"])
-        metode = st.selectbox("Metode Gestun", ["Online","Konven"])
+        metode = st.selectbox("Metode Gestun", ["Konven", "Online"])
         lay = st.selectbox("Jenis Layanan Transfer", ["Normal","Kilat","Super Kilat"])
         prod = st.text_input("Produk & Sub Produk")
         rt_type = st.selectbox("Tipe Rate Jual", ["Rp","%"])
@@ -270,6 +271,8 @@ elif menu == "Input Data Transaksi Gestun":
             return f"*{text}*" if bold_headings else text
         def fmt_value(text):
             return f"_{text}_" if italic_values else text
+        def fmt_value(text):
+            return f"*{text}*" if bold_values else text
         bullet = "•"
         sep = "_______________________________"
         # Build output
@@ -296,20 +299,4 @@ elif menu == "Input Data Transaksi Gestun":
 {bullet} {fmt_heading(f"Jumlah Transfer {format_rupiah(trf)}")}
 """
         # Display copyable text
-        st.text_area("Hasil (copyable ke WhatsApp):", teks_output, height=350)
-        # Prepare print section
-        st.markdown(f"""
-<div id="print-section">
-<pre>{teks_output}</pre>
-</div>
-""", unsafe_allow_html=True)
-        # Print button
-        components.html(
-            '''
-            <button type="button" style="padding:8px 16px; font-size:1rem; margin-top:10px;"
-                onclick="var content = window.top.document.getElementById('print-section').innerHTML; var w=window.open(); w.document.write(content); w.document.close(); w.focus(); w.print(); w.close();">
-                Print
-            </button>
-            ''',
-            height=80
-        )
+        st.text_area("Hasil (copyable ke WhatsApp):", teks_output, height=500)
