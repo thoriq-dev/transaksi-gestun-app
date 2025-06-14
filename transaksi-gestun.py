@@ -319,28 +319,27 @@ elif menu == "Input Data Transaksi Gestun":
             return txt
 
         bullet = "•"
-        sep    = "_________________"
+        sep    = "________"
 
         teks_output = f"""
-{bullet} {fmt_heading(f"TRANSAKSI NO. {transaksi_no}")}
+{fmt_heading(f"TRANSAKSI NO. {transaksi_no}")}
+{fmt_heading('DATA NASABAH')}
+   {bullet}Nama Nasabah : {fmt_value(nama)}
+   {bullet}Jenis Nasabah : {fmt_value(jenis)}
+   {bullet}Kelas Nasabah : {fmt_value(kelas)}
 {sep}
-{bullet} {fmt_heading('DATA NASABAH')}
-   {bullet} Nama Nasabah   : {fmt_value(nama)}
-   {bullet} Jenis Nasabah  : {fmt_value(jenis)}
-   {bullet} Kelas Nasabah  : {fmt_value(kelas)}
+{fmt_heading('DATA TRANSAKSI')}
+   {bullet}Jenis Gestun : {fmt_value(j_g)}
+   {bullet}Metode Gestun : {fmt_value(metode)}
+   {bullet}Jenis Layanan Transfer: {fmt_value(lay)}
+   {bullet}Produk & Sub Produk : {fmt_value(prod)}
+   {bullet}Rate Jual : {fmt_value(rt_str)}
 {sep}
-{bullet} {fmt_heading('DATA TRANSAKSI')}
-   {bullet} Jenis Gestun : {fmt_value(j_g)}
-   {bullet} Metode Gestun : {fmt_value(metode)}
-   {bullet} Jenis Layanan Transfer: {fmt_value(lay)}
-   {bullet} Produk & Sub Produk : {fmt_value(prod)}
-   {bullet} Rate Jual : {fmt_value(rt_str)}
+{fmt_heading('RANGKUMAN BIAYA DAN TRANSAKSI')}
+   {bullet}Jumlah Transaksi : {fmt_value(jt_fmt)}
+   {bullet}Biaya Layanan : {fmt_value(bl_fmt)}
+   {bullet}Keterangan Layanan : {fmt_value(ket)}
 {sep}
-{bullet} {fmt_heading('RANGKUMAN BIAYA DAN TRANSAKSI')}
-   {bullet} Jumlah Transaksi : {fmt_value(jt_fmt)}
-   {bullet} Biaya Layanan : {fmt_value(bl_fmt)}
-   {bullet} Keterangan Layanan : {fmt_value(ket)}
-{sep}
-{bullet} {fmt_heading(f"Jumlah Transfer : {trf_fmt}")}
+{fmt_heading(f"Jumlah Transfer : {trf_fmt}")}
 """
         st.text_area("Hasil (copyable ke WhatsApp):", teks_output, height=550)
