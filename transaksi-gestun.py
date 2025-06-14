@@ -319,10 +319,11 @@ elif menu == "Input Data Transaksi Gestun":
             return txt
 
         bullet = "•"
-        sep    = "________"
+        sep    = "___________"
 
         teks_output = f"""
 {fmt_heading(f"TRANSAKSI NO. {transaksi_no}")}
+
 {fmt_heading('DATA NASABAH')}
    {bullet}Nama Nasabah : {fmt_value(nama)}
    {bullet}Jenis Nasabah : {fmt_value(jenis)}
