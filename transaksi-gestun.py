@@ -235,13 +235,13 @@ elif menu == "Pembagian Transaksi EDC":
 elif menu == "Input Data Transaksi Gestun":
     st.title("Form Input Data Transaksi Gestun")
 
-    # Formatting options
+    # Toggle formatting
     bold_headings = st.sidebar.checkbox("Bold Headings", True)
     italic_values = st.sidebar.checkbox("Italic Values", False)
-    bold_values  = st.sidebar.checkbox("Bold Values", False)
-
-    with st.form(key='form3'):
-        # No. Transaksi & Data Nasabah
+    bold_values   = st.sidebar.checkbox("Bold Values", False)
+    
+    # --- Input lain di dalam form ---
+    with st.form(key="form3"):
         transaksi_no = st.text_input("No. Transaksi")
         nama         = st.text_input("Nama Nasabah")
         jenis        = st.selectbox("Jenis Nasabah", ["Langganan", "Baru"])
@@ -249,62 +249,78 @@ elif menu == "Input Data Transaksi Gestun":
                           "Non Member", "Member Gold",
                           "Member Platinum", "Member Anggota Koperasi"
                         ])
-        st.markdown("---")
-
-        # Data Transaksi
         j_g    = st.radio("Jenis Gestun", ["Kotor", "Bersih"])
         metode = st.selectbox("Metode Gestun", ["Konven", "Online"])
-        lay    = st.selectbox("Jenis Layanan Transfer", ["Normal","Kilat","Super Kilat"])
-        st.markdown("---")
-
-        # Produk & Sub Produk
-        prod = st.text_input("Produk & Sub Produk")
-        st.markdown("---")
-
-        # Rate Jual: pilih tipe lalu input bebas
-        rt_type = st.selectbox("Tipe Rate Jual", ["%", "Rp"])
-        label   = "Rate Jual (%)" if rt_type == "%" else "Rate Jual (Rp)"
-        if rt_type == "Rp":
-            rt_val = st.number_input(label, min_value=0, step=100, format="%d")
-            rt_str = format_rupiah(rt_val)
-        else:
-            rt_percent = st.number_input(
-                label, min_value=0.0, max_value=100.0,
-                step=0.1, format="%.2f"
-            )
-            rt_str = f"{rt_percent:.2f}%"
-        st.markdown("---")
-
-        # Rangkuman
-        jt_str = st.text_input(
-            "Jumlah Transaksi (Rp)", key="jt_str",
-            on_change=format_rupiah_input, args=("jt_str",)
-        )
-        bl_str = st.text_input(
-            "Biaya Layanan (Rp)", key="bl_str",
-            on_change=format_rupiah_input, args=("bl_str",)
-        )
-        ket = st.text_area("Keterangan Layanan", height=80)
-        trf = st.number_input("Jumlah Transfer (Rp)", min_value=0, step=100, format="%d")
-
-        # Tombol submit harus di dalam form
+        lay    = st.selectbox("Jenis Layanan Transfer", ["Normal", "Kilat", "Super Kilat"])
+        prod    = st.text_input("Produk & Sub Produk")
+        ket    = st.text_area("Keterangan Layanan", height=80)
         submit = st.form_submit_button("Generate WhatsApp Text")
 
+# --- Formatted numeric inputs (thousands separator) – outside form ---
+    rt_type = st.selectbox("Tipe Rate Jual", ["%", "Rp"])
+    label   = "Rate Jual (%)" if rt_type == "%" else "Rate Jual (Rp)"
+    if rt_type == "Rp":
+        rt_str_raw = st.text_input(
+            label, key="rt_rp_str",
+            on_change=format_rupiah_input,
+            args=("rt_rp_str",)
+        )
+        # parse integer, lalu format ulang
+        raw = st.session_state["rt_rp_str"].replace(".", "")
+        rt_val = int(raw) if raw.isdigit() else 0
+        rt_str = format_rupiah(rt_val)
+    else:
+        rt_percent = st.number_input(
+            label, min_value=0.0, max_value=100.0,
+            step=0.1, format="%.2f"
+        )
+        rt_str = f"{rt_percent:.2f}%"
+    bl_str = st.text_input(
+        "Biaya Layanan (Rp)",
+        key="bl_str",
+        on_change=format_rupiah_input,
+        args=("bl_str",)
+    )
+    jt_str = st.text_input(
+        "Jumlah Transaksi (Rp)",
+        key="jt_str",
+        on_change=format_rupiah_input,
+        args=("jt_str",)
+    )
+    trf_str = st.text_input(
+        "Jumlah Transfer (Rp)",
+        key="trf_str",
+        on_change=format_rupiah_input,
+        args=("trf_str",)
+    )
+
+    # parse ke integer
+    raw_jt = jt_str.replace(".", "")
+    raw_bl = bl_str.replace(".", "")
+    raw_tr = trf_str.replace(".", "")
+
+    jt = int(raw_jt) if raw_jt.isdigit() else 0
+    bl = int(raw_bl) if raw_bl.isdigit() else 0
+    trf = int(raw_tr) if raw_tr.isdigit() else 0
+
+
+    # --- Setelah submit, bangun output ---
     if submit:
-        # Helper formatting
+        jt_fmt  = format_rupiah(jt)
+        bl_fmt  = format_rupiah(bl)
+        trf_fmt = format_rupiah(trf)
+
         def fmt_heading(txt):
             return f"*{txt}*" if bold_headings else txt
+
         def fmt_value(txt):
-            if bold_values:
-                txt = f"*{txt}*"
-            if italic_values:
-                txt = f"_{txt}_"
+            if bold_values:   txt = f"*{txt}*"
+            if italic_values: txt = f"_{txt}_"
             return txt
 
         bullet = "•"
-        sep    = "_______________________________"
+        sep    = "_________________"
 
-        # Bangun teks
         teks_output = f"""
 {bullet} {fmt_heading(f"TRANSAKSI NO. {transaksi_no}")}
 {sep}
@@ -321,11 +337,10 @@ elif menu == "Input Data Transaksi Gestun":
    {bullet} Rate Jual             : {fmt_value(rt_str)}
 {sep}
 {bullet} {fmt_heading('RANGKUMAN BIAYA DAN TRANSAKSI')}
-   {bullet} Jumlah Transaksi      : {fmt_value(format_rupiah(int(jt_str.replace('.',''))))}
-   {bullet} Biaya Layanan         : {fmt_value(format_rupiah(int(bl_str.replace('.',''))))}
+   {bullet} Jumlah Transaksi      : {fmt_value(jt_fmt)}
+   {bullet} Biaya Layanan         : {fmt_value(bl_fmt)}
    {bullet} Keterangan Layanan    : {fmt_value(ket)}
 {sep}
-{bullet} {fmt_heading(f"Jumlah Transfer {format_rupiah(trf)}")}
+{bullet} {fmt_heading(f"Jumlah Transfer : {trf_fmt}")}
 """
-        # Tampilkan hasil
         st.text_area("Hasil (copyable ke WhatsApp):", teks_output, height=550)
