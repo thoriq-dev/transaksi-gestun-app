@@ -251,19 +251,13 @@ elif menu == "Input Data Transaksi Gestun":
         metode = st.selectbox("Metode Gestun", ["Konven", "Online"])
         lay = st.selectbox("Jenis Layanan Transfer", ["Normal","Kilat","Super Kilat"])
         prod = st.text_input("Produk & Sub Produk")
-        # Rate Jual: free input for % or Rp
-        # setelah memilih tipe
-        rt_type = st.selectbox("Tipe Rate Jual", ["%", "Rp."])
-
-        # bangun label sesuai tipe
-        label = "Rate Jual (%)" if rt_type == "%" else "Rate Jual (Rp.)"
-
-        # pakai label itu di number_input
+        label = "Rate Jual (%)" if rt_type == "%" else "Rate Jual (Rp)"
         if rt_type == "Rp":
             rt_val = st.number_input(label, min_value=0, step=100, format="%d")
             rt_str = format_rupiah(rt_val)
         else:
-            rt_percent = st.number_input(label, min_value=0.0, max_value=100.0, step=0.1, format="%.2f")
+            rt_percent = st.number_input(label, min_value=0.0, max_value=100.0,
+            step=0.1, format="%.2f")
             rt_str = f"{rt_percent:.2f}%"
         st.markdown("---")
         jt_str = st.text_input(
