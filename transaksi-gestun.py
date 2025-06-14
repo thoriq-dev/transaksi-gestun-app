@@ -247,20 +247,37 @@ elif menu == "Input Data Transaksi Gestun":
             "Non Member","Member Gold",
             "Member Platinum","Member Anggota Koperasi"
         ])
-        st.markdown("---")
         j_g = st.radio("Jenis Gestun", ["Kotor","Bersih"])
         metode = st.selectbox("Metode Gestun", ["Konven", "Online"])
         lay = st.selectbox("Jenis Layanan Transfer", ["Normal","Kilat","Super Kilat"])
         prod = st.text_input("Produk & Sub Produk")
-        rt_type = st.selectbox("Tipe Rate Jual", ["Rp","%"])
+        # Rate Jual: free input for % or Rp
+        # setelah memilih tipe
+        rt_type = st.selectbox("Tipe Rate Jual", ["%", "Rp."])
+
+        # bangun label sesuai tipe
+        label = "Rate Jual (%)" if rt_type == "%" else "Rate Jual (Rp.)"
+
+        # pakai label itu di number_input
         if rt_type == "Rp":
-            rt_val = st.number_input("Rate Jual (Rp)", min_value=0, step=100, format="%d")
+            rt_val = st.number_input(label, min_value=0, step=100, format="%d")
             rt_str = format_rupiah(rt_val)
         else:
-            rt_str = st.selectbox("Rate Jual (%)", ["2.6%","2.5%","3.5%"])
+            rt_percent = st.number_input(label, min_value=0.0, max_value=100.0, step=0.1, format="%.2f")
+            rt_str = f"{rt_percent:.2f}%"
         st.markdown("---")
-        jt = st.number_input("Jumlah Transaksi (Rp)", min_value=0, step=100, format="%d")
-        bl = st.number_input("Biaya Layanan (Rp)", min_value=0, step=100, format="%d")
+        jt_str = st.text_input(
+        "Jumlah Transaksi (Rp)",
+        key="jt_str",
+        on_change=format_rupiah_input,
+        args=("jt_str",)
+        )
+        bl_str = st.text_input(
+        "Biaya Layanan (Rp)",
+        key="bl_str",
+        on_change=format_rupiah_input,
+        args=("bl_str",)
+        )
         ket = st.text_area("Keterangan Layanan", height=80)
         trf = st.number_input("Jumlah Transfer (Rp)", min_value=0, step=100, format="%d")
         submit = st.form_submit_button("Generate WhatsApp Text")
@@ -270,9 +287,12 @@ elif menu == "Input Data Transaksi Gestun":
         def fmt_heading(text):
             return f"*{text}*" if bold_headings else text
         def fmt_value(text):
-            return f"_{text}_" if italic_values else text
-        def fmt_value(text):
-            return f"*{text}*" if bold_values else text
+            # Jika mau bold dulu, baru italic:
+            if bold_values:
+                text = f"*{text}*"
+            if italic_values:
+                text = f"_{text}_"
+            return text
         bullet = "•"
         sep = "_______________________________"
         # Build output
@@ -292,11 +312,11 @@ elif menu == "Input Data Transaksi Gestun":
    {bullet} Rate Jual             : {fmt_value(rt_str)}
 {sep}
 {bullet} {fmt_heading('RANGKUMAN BIAYA DAN TRANSAKSI')}
-   {bullet} Jumlah Transaksi : {fmt_value(format_rupiah(jt))}
-   {bullet} Biaya Layanan    : {fmt_value(format_rupiah(bl))}
+   {bullet} Jumlah Transaksi : {fmt_value(format_rupiah(jt_str))}
+   {bullet} Biaya Layanan    : {fmt_value(format_rupiah(bl_str))}
    {bullet} Keterangan Layanan: {fmt_value(ket)}
 {sep}
 {bullet} {fmt_heading(f"Jumlah Transfer {format_rupiah(trf)}")}
 """
         # Display copyable text
-        st.text_area("Hasil (copyable ke WhatsApp):", teks_output, height=500)
+        st.text_area("Hasil (copyable ke WhatsApp):", teks_output, height=550)
