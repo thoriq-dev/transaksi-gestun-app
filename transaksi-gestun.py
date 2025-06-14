@@ -330,16 +330,16 @@ elif menu == "Input Data Transaksi Gestun":
    {bullet} Kelas Nasabah  : {fmt_value(kelas)}
 {sep}
 {bullet} {fmt_heading('DATA TRANSAKSI')}
-   {bullet} Jenis Gestun          : {fmt_value(j_g)}
-   {bullet} Metode Gestun         : {fmt_value(metode)}
+   {bullet} Jenis Gestun : {fmt_value(j_g)}
+   {bullet} Metode Gestun : {fmt_value(metode)}
    {bullet} Jenis Layanan Transfer: {fmt_value(lay)}
-   {bullet} Produk & Sub Produk   : {fmt_value(prod)}
-   {bullet} Rate Jual             : {fmt_value(rt_str)}
+   {bullet} Produk & Sub Produk : {fmt_value(prod)}
+   {bullet} Rate Jual : {fmt_value(rt_str)}
 {sep}
 {bullet} {fmt_heading('RANGKUMAN BIAYA DAN TRANSAKSI')}
-   {bullet} Jumlah Transaksi      : {fmt_value(jt_fmt)}
-   {bullet} Biaya Layanan         : {fmt_value(bl_fmt)}
-   {bullet} Keterangan Layanan    : {fmt_value(ket)}
+   {bullet} Jumlah Transaksi : {fmt_value(jt_fmt)}
+   {bullet} Biaya Layanan : {fmt_value(bl_fmt)}
+   {bullet} Keterangan Layanan : {fmt_value(ket)}
 {sep}
 {bullet} {fmt_heading(f"Jumlah Transfer : {trf_fmt}")}
 """
