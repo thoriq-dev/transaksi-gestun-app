@@ -66,7 +66,7 @@ if menu == "Hitung Nominal Transaksi":
     st.header("💰 Hitung Nominal Transaksi")
 
     # Pilihan jenis & rate
-    jenis = st.radio("Pilih Jenis Perhitungan:", ["Gesek Kotor", "Gesek Bersih"])
+    jenis = st.selectbox("Pilih Jenis Perhitungan:", ["Gesek Kotor", "Gesek Bersih"])
     rate_dict = {
         "2.5% (0.975) Visa & Master Card": 0.975,
         "2.6% (0.974) Visa & Master Card": 0.974,
