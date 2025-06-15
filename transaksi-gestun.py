@@ -259,20 +259,21 @@ elif menu == "Input Data Transaksi Gestun":
 
         # HITUNG JUMLAH TRANSAKSI & TRANSFER
         jt, trf = 0, 0
+
         if j_g == "Kotor":
-            jt_str = st.text_input("Jumlah Transaksi (Rp)", key="jt_str")
-            raw_jt = jt_str.replace(".", "")
-            jt = int(raw_jt) if raw_jt.isdigit() else 0
+            # Gunakan input angka untuk Jumlah Transaksi
+            jt = st.number_input("Jumlah Transaksi (Rp)", min_value=0, step=200000, format="%d", key="jt_input")
             trf = jt - int(jt * rate_decimal) - bl
             trf_str = format_rupiah(trf)
             st.text_input("Jumlah Transfer (Rp)", value=trf_str, disabled=True)
+
         else:
-            trf_str = st.text_input("Jumlah Transfer (Rp)", key="trf_str")
-            raw_tr = trf_str.replace(".", "")
-            trf = int(raw_tr) if raw_tr.isdigit() else 0
+            # Gunakan input angka untuk Jumlah Transfer
+            trf = st.number_input("Jumlah Transfer (Rp)", min_value=0, step=200000, format="%d", key="trf_input")
             jt = int((trf / (1 - rate_decimal)) + bl) if rate_decimal < 1 else 0
             jt_str = format_rupiah(jt)
             st.text_input("Jumlah Transaksi (Rp)", value=jt_str, disabled=True)
+
 
         # BIAYA LAYANAN
         st.number_input(
