@@ -193,91 +193,69 @@ if menu == "Hitung Nominal Transaksi":
 elif menu == "Input Data Transaksi Gestun":
     st.title("Form Input Data Transaksi Gestun")
 
-    # Semua opsi biaya tambahan
+    # Semua opsi biaya tambahan (tidak ditampilkan ke user)
     biaya_opsi = {
         "Biaya administrasi nasabah baru (Rp10.000)": 10000,
         "Biaya layanan super kilat (Rp18.000)": 18000,
         "Biaya layanan kilat (Rp15.000)": 15000,
         "Biaya transfer beda bank (Rp10.000)": 10000,
-        "Tidak ada tambahan biaya layanan": 0
     }
 
     with st.form(key="form3"):
-        # DATA NASABAH
-        transaksi_no = st.number_input("No. Transaksi", min_value=1, step=1, format="%d")
-        nama = st.text_input("Nama Nasabah")
-        jenis = st.selectbox("Jenis Nasabah", ["Langganan", "Baru"])
-        kelas = st.selectbox("Kelas Nasabah", [
-            "Non Member", "Member Gold", "Member Platinum", "Member Anggota Koperasi"
-        ])
-        bank = st.selectbox("Bank Tujuan", ["BCA", "Lainnya"])
-    
+        st.subheader("🧾 Data Nasabah & Transaksi")
 
-        # DATA TRANSAKSI
-        j_g = st.selectbox("Jenis Gestun", ["Kotor", "Bersih"])
-        metode = st.selectbox("Metode Gestun", ["Konven", "Online"])
-    
+        # === BARIS 1 ===
+        col1, col2 = st.columns(2)
+        with col1:
+            transaksi_no = st.number_input("No. Transaksi", min_value=1, step=1, format="%d")
+        with col2:
+            nama = st.text_input("Nama Nasabah")
 
-        # PRODUK
-        prod = st.text_input("Produk & Sub Produk")
-    
+        # === BARIS 2 ===
+        col3, col4 = st.columns(2)
+        with col3:
+            jenis = st.selectbox("Jenis Nasabah", ["Langganan", "Baru"])
+        with col4:
+            kelas = st.selectbox("Kelas Nasabah", [
+                "Non Member", "Member Gold", "Member Platinum", "Member Anggota Koperasi"
+            ])
 
-        # RATE JUAL (% only)
-        rt_percent = st.number_input("Rate Jual (%)", min_value=0.0, max_value=100.0, step=0.1, format="%.2f")
+        # === BARIS 3 ===
+        col5, col6 = st.columns(2)
+        with col5:
+            bank = st.selectbox("Bank Tujuan", ["BCA", "Lainnya"])
+        with col6:
+            j_g = st.selectbox("Jenis Gestun", ["Kotor", "Bersih"])
+
+        # === BARIS 4 ===
+        col7, col8 = st.columns(2)
+        with col7:
+            metode = st.selectbox("Metode Gestun", ["Konven", "Online"])
+        with col8:
+            prod = st.text_input("Produk & Sub Produk")
+
+        # === BARIS 5 ===
+        col9, col10 = st.columns(2)
+        with col9:
+            rt_percent = st.number_input("Rate Jual (%)", min_value=0.0, max_value=100.0, step=0.1, format="%.2f")
+        with col10:
+            lay = st.selectbox("Jenis Layanan Transfer", ["Normal", "Kilat", "Super Kilat"])
+
         rt_str = f"{rt_percent:.2f}%"
         rate_decimal = rt_percent / 100 if rt_percent else 0
-    
 
-        # LAYANAN TRANSFER
-        lay = st.selectbox("Jenis Layanan Transfer", ["Normal", "Kilat", "Super Kilat"])
-
-        # Hitung biaya layanan transfer
-        biaya_layanan_transfer = 0
+        # Hitung biaya layanan otomatis
+        biaya_otomatis = 0
         if lay == "Kilat":
-            biaya_layanan_transfer = biaya_opsi["Biaya layanan kilat (Rp15.000)"]
+            biaya_otomatis += biaya_opsi["Biaya layanan kilat (Rp15.000)"]
         elif lay == "Super Kilat":
-            biaya_layanan_transfer = biaya_opsi["Biaya layanan super kilat (Rp18.000)"]
-
-        # Filter biaya tambahan
-        biaya_tambahan_opsi = [
-            k for k in biaya_opsi
-            if "layanan kilat" not in k.lower()
-            and "super kilat" not in k.lower()
-            and "tidak ada" not in k.lower()
-        ]
-
-        # Hilangkan biaya admin untuk nasabah langganan
-        if jenis == "Langganan":
-            biaya_tambahan_opsi = [
-                b for b in biaya_tambahan_opsi
-                if "administrasi nasabah baru" not in b.lower()
-            ]
-
-        # Hilangkan biaya beda bank jika bank tujuan sudah Lainnya
-        if bank != "BCA":
-            biaya_tambahan_opsi = [
-                b for b in biaya_tambahan_opsi
-                if "transfer beda bank" not in b.lower()
-            ]
-
-        if jenis == "Langganan":
-            biaya_tambahan_opsi = [
-                b for b in biaya_tambahan_opsi
-                if "administrasi nasabah baru" not in b.lower()
-            ]
-        biaya_pilihan = st.multiselect("Pilih Biaya Tambahan Lainnya:", biaya_tambahan_opsi)
-        biaya_tambahan_lain = sum(biaya_opsi[b] for b in biaya_pilihan)
-
-        # Hitung biaya otomatis (admin, beda bank, layanan transfer)
-        biaya_otomatis = biaya_layanan_transfer
+            biaya_otomatis += biaya_opsi["Biaya layanan super kilat (Rp18.000)"]
         if jenis == "Baru":
             biaya_otomatis += biaya_opsi["Biaya administrasi nasabah baru (Rp10.000)"]
         if bank != "BCA":
             biaya_otomatis += biaya_opsi["Biaya transfer beda bank (Rp10.000)"]
-            
-        bl = biaya_otomatis + biaya_tambahan_lain
 
-    
+        bl = biaya_otomatis
 
         # HITUNG JUMLAH TRANSAKSI & TRANSFER
         jt, trf = 0, 0
@@ -285,18 +263,18 @@ elif menu == "Input Data Transaksi Gestun":
             jt_str = st.text_input("Jumlah Transaksi (Rp)", key="jt_str")
             raw_jt = jt_str.replace(".", "")
             jt = int(raw_jt) if raw_jt.isdigit() else 0
-            trf = jt - int(jt * rate_decimal) - biaya_layanan_transfer - biaya_tambahan_lain
+            trf = jt - int(jt * rate_decimal) - bl
             trf_str = format_rupiah(trf)
             st.text_input("Jumlah Transfer (Rp)", value=trf_str, disabled=True)
         else:
             trf_str = st.text_input("Jumlah Transfer (Rp)", key="trf_str")
             raw_tr = trf_str.replace(".", "")
             trf = int(raw_tr) if raw_tr.isdigit() else 0
-            jt = int((trf / (1 - rate_decimal)) + biaya_otomatis + biaya_tambahan_lain) if rate_decimal < 1 else 0
+            jt = int((trf / (1 - rate_decimal)) + bl) if rate_decimal < 1 else 0
             jt_str = format_rupiah(jt)
             st.text_input("Jumlah Transaksi (Rp)", value=jt_str, disabled=True)
 
-        # BIAYA LAYANAN TAMPILAN
+        # BIAYA LAYANAN
         st.number_input(
             "Biaya Layanan (Rp)",
             value=bl,
@@ -304,8 +282,6 @@ elif menu == "Input Data Transaksi Gestun":
             disabled=True,
             help="Biaya layanan dihitung otomatis"
         )
-
-    
 
         # KETERANGAN OTOMATIS
         lines = []
@@ -356,6 +332,7 @@ elif menu == "Input Data Transaksi Gestun":
 {bullet} {fmt_heading(f"Jumlah Transfer {trf_fmt}")}
 """
         st.code(teks_output, language="text")
+
 
 
 # =================================
