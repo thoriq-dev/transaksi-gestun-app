@@ -55,8 +55,8 @@ st.set_page_config(page_title="Input Data Transaksi Gestun", layout="centered")
 
 menu = st.sidebar.selectbox("Pilih Menu", [
     "Hitung Nominal Transaksi",
+    "Input Data Transaksi Gestun",
     "Pembagian Transaksi EDC",
-    "Input Data Transaksi Gestun"
 ])
 
 # ===============================
@@ -68,40 +68,12 @@ if menu == "Hitung Nominal Transaksi":
     # Pilihan jenis & rate
     jenis = st.selectbox("Pilih Jenis Perhitungan:", ["Gesek Kotor", "Gesek Bersih"])
     rate_dict = {
-        "2.5% (0.975) Visa & Master Card": 0.975,
-        "2.6% (0.974) Visa & Master Card": 0.974,
-        "3.5% (0.965) BCA Card": 0.965,
-        "4.7% (0.953) AMEX": 0.953,
+        "2.5% Visa & Master Card": 0.975,
+        "2.6% Visa & Master Card": 0.974,
+        "3.5% BCA Card": 0.965,
+        "4.7% AMEX": 0.953,
     }
     rate_label = st.selectbox("Pilih Rate Jual:", list(rate_dict.keys()))
-    rate = rate_dict[rate_label]
-
-    # --- Callback untuk memformat input secara real-time ---
-    def format_nominal():
-        txt = st.session_state.nominal_input
-        digits_only = "".join([c for c in txt if c.isdigit()])
-        if digits_only:
-            st.session_state.nominal_input = "{:,}".format(int(digits_only)).replace(",", ".")
-        else:
-            st.session_state.nominal_input = ""
-
-    # Inisialisasi session_state (hanya sekali)
-    if "nominal_input" not in st.session_state:
-        st.session_state.nominal_input = ""
-
-    # Text input yang memanggil callback format_nominal
-    st.text_input(
-        label=f"Masukkan nominal {'transaksi' if jenis == 'Gesek Kotor' else 'transfer'} (Rp):",
-        key="nominal_input",
-        on_change=format_nominal,
-    )
-
-    # <<–– Blok konversi harus tetap ada ––>>
-    raw = st.session_state.nominal_input.replace(".", "")
-    if raw.isdigit():
-        nominal_int = int(raw)
-    else:
-        nominal_int = 0
 
     # Pilihan Biaya Tambahan & Layanan Transfer
     biaya_opsi = {
@@ -111,6 +83,7 @@ if menu == "Hitung Nominal Transaksi":
         "Biaya transfer beda bank (Rp10.000)": 10000,
         "Tidak ada tambahan biaya layanan": 0
     }
+
     layanan_transfer = st.selectbox("Pilih Layanan Transfer:", ["Normal", "Kilat", "Super Kilat"])
     biaya_tambahan_opsi = [
         k for k in biaya_opsi
@@ -118,6 +91,7 @@ if menu == "Hitung Nominal Transaksi":
         and "super kilat" not in k.lower()
         and "tidak ada" not in k.lower()
     ]
+
     biaya_pilihan = st.multiselect("Pilih Biaya Tambahan Lainnya:", biaya_tambahan_opsi)
     biaya_total = sum(biaya_opsi[b] for b in biaya_pilihan)
     if layanan_transfer == "Kilat":
@@ -126,9 +100,35 @@ if menu == "Hitung Nominal Transaksi":
         biaya_total += biaya_opsi["Biaya layanan super kilat (Rp18.000)"]
 
     st.write(f"▶️ Total Biaya Tambahan: {format_rupiah(biaya_total)}")
+    rate = rate_dict.get(rate_label, 1)
+
+    # --- Callback untuk memformat input secara real-time ---
+    def format_rupiah_input(key):
+        txt = st.session_state.get(key, "")
+        digits = "".join([c for c in txt if c.isdigit()])
+        st.session_state[key] = "{:,}".format(int(digits)).replace(",", ".") if digits else ""
+
+    # Inisialisasi session_state (hanya sekali)
+    if "nominal_input" not in st.session_state:
+        st.session_state.nominal_input = ""
+
+    # Text input yang memanggil callback format_nominal
+    st.text_input(
+    label=f"Masukkan nominal {'Transaksi (Gesek Kotor)' if jenis == 'Gesek Kotor' else 'Transfer Diterima (Gesek Bersih)'} (Rp):",
+    key="nominal_input",
+    on_change=format_rupiah_input,
+    args=("nominal_input",),
+    )
+
+    # <<–– Blok konversi harus tetap ada ––>>
+    raw = st.session_state.nominal_input.replace(".", "")
+    if raw.isdigit():
+        nominal_int = int(raw)
+    else:
+        nominal_int = 0
 
     # --- Tombol Hitung Sekarang (harus di dalam blok ini) ---
-    if st.button("Hitung Sekarang"):
+    if st.button("Hitung Sekarang", disabled=(nominal_int <= 0)):
         waktu_mulai = datetime.now(ZoneInfo("Asia/Jakarta"))
         estimasi_selesai_transfer = estimasi_selesai(
             waktu_mulai, estimasi_durasi(layanan_transfer)
@@ -187,9 +187,180 @@ if menu == "Hitung Nominal Transaksi":
             else:
                 st.error("Masukkan nominal transaksi/transf sebesar lebih dari 0 terlebih dahulu.")
 
+# =============================================
+# MENU 2: INPUT DATA TRANSAKSI GESTUN
+# =============================================
+elif menu == "Input Data Transaksi Gestun":
+    st.title("Form Input Data Transaksi Gestun")
+
+    # Semua opsi biaya tambahan
+    biaya_opsi = {
+        "Biaya administrasi nasabah baru (Rp10.000)": 10000,
+        "Biaya layanan super kilat (Rp18.000)": 18000,
+        "Biaya layanan kilat (Rp15.000)": 15000,
+        "Biaya transfer beda bank (Rp10.000)": 10000,
+        "Tidak ada tambahan biaya layanan": 0
+    }
+
+    with st.form(key="form3"):
+        # DATA NASABAH
+        transaksi_no = st.number_input("No. Transaksi", min_value=1, step=1, format="%d")
+        nama = st.text_input("Nama Nasabah")
+        jenis = st.selectbox("Jenis Nasabah", ["Langganan", "Baru"])
+        kelas = st.selectbox("Kelas Nasabah", [
+            "Non Member", "Member Gold", "Member Platinum", "Member Anggota Koperasi"
+        ])
+        bank = st.selectbox("Bank Tujuan", ["BCA", "Lainnya"])
+    
+
+        # DATA TRANSAKSI
+        j_g = st.selectbox("Jenis Gestun", ["Kotor", "Bersih"])
+        metode = st.selectbox("Metode Gestun", ["Konven", "Online"])
+    
+
+        # PRODUK
+        prod = st.text_input("Produk & Sub Produk")
+    
+
+        # RATE JUAL (% only)
+        rt_percent = st.number_input("Rate Jual (%)", min_value=0.0, max_value=100.0, step=0.1, format="%.2f")
+        rt_str = f"{rt_percent:.2f}%"
+        rate_decimal = rt_percent / 100 if rt_percent else 0
+    
+
+        # LAYANAN TRANSFER
+        lay = st.selectbox("Jenis Layanan Transfer", ["Normal", "Kilat", "Super Kilat"])
+
+        # Hitung biaya layanan transfer
+        biaya_layanan_transfer = 0
+        if lay == "Kilat":
+            biaya_layanan_transfer = biaya_opsi["Biaya layanan kilat (Rp15.000)"]
+        elif lay == "Super Kilat":
+            biaya_layanan_transfer = biaya_opsi["Biaya layanan super kilat (Rp18.000)"]
+
+        # Filter biaya tambahan
+        biaya_tambahan_opsi = [
+            k for k in biaya_opsi
+            if "layanan kilat" not in k.lower()
+            and "super kilat" not in k.lower()
+            and "tidak ada" not in k.lower()
+        ]
+
+        # Hilangkan biaya admin untuk nasabah langganan
+        if jenis == "Langganan":
+            biaya_tambahan_opsi = [
+                b for b in biaya_tambahan_opsi
+                if "administrasi nasabah baru" not in b.lower()
+            ]
+
+        # Hilangkan biaya beda bank jika bank tujuan sudah Lainnya
+        if bank != "BCA":
+            biaya_tambahan_opsi = [
+                b for b in biaya_tambahan_opsi
+                if "transfer beda bank" not in b.lower()
+            ]
+
+        if jenis == "Langganan":
+            biaya_tambahan_opsi = [
+                b for b in biaya_tambahan_opsi
+                if "administrasi nasabah baru" not in b.lower()
+            ]
+        biaya_pilihan = st.multiselect("Pilih Biaya Tambahan Lainnya:", biaya_tambahan_opsi)
+        biaya_tambahan_lain = sum(biaya_opsi[b] for b in biaya_pilihan)
+
+        # Hitung biaya otomatis (admin, beda bank, layanan transfer)
+        biaya_otomatis = biaya_layanan_transfer
+        if jenis == "Baru":
+            biaya_otomatis += biaya_opsi["Biaya administrasi nasabah baru (Rp10.000)"]
+        if bank != "BCA":
+            biaya_otomatis += biaya_opsi["Biaya transfer beda bank (Rp10.000)"]
+            
+        bl = biaya_otomatis + biaya_tambahan_lain
+
+    
+
+        # HITUNG JUMLAH TRANSAKSI & TRANSFER
+        jt, trf = 0, 0
+        if j_g == "Kotor":
+            jt_str = st.text_input("Jumlah Transaksi (Rp)", key="jt_str")
+            raw_jt = jt_str.replace(".", "")
+            jt = int(raw_jt) if raw_jt.isdigit() else 0
+            trf = jt - int(jt * rate_decimal) - biaya_layanan_transfer - biaya_tambahan_lain
+            trf_str = format_rupiah(trf)
+            st.text_input("Jumlah Transfer (Rp)", value=trf_str, disabled=True)
+        else:
+            trf_str = st.text_input("Jumlah Transfer (Rp)", key="trf_str")
+            raw_tr = trf_str.replace(".", "")
+            trf = int(raw_tr) if raw_tr.isdigit() else 0
+            jt = int((trf / (1 - rate_decimal)) + biaya_otomatis + biaya_tambahan_lain) if rate_decimal < 1 else 0
+            jt_str = format_rupiah(jt)
+            st.text_input("Jumlah Transaksi (Rp)", value=jt_str, disabled=True)
+
+        # BIAYA LAYANAN TAMPILAN
+        st.number_input(
+            "Biaya Layanan (Rp)",
+            value=bl,
+            format="%d",
+            disabled=True,
+            help="Biaya layanan dihitung otomatis"
+        )
+
+    
+
+        # KETERANGAN OTOMATIS
+        lines = []
+        if jenis == "Baru":
+            lines.append("Biaya Layanan Administrasi Nasabah Baru")
+        if bank != "BCA":
+            lines.append("Biaya Layanan Transfer diluar Bank BCA")
+        if lay == "Kilat":
+            lines.append("Biaya Layanan Transfer Kilat")
+        elif lay == "Super Kilat":
+            lines.append("Biaya Layanan Transfer Super Kilat")
+        default_ket = " & ".join(lines) if lines else ""
+
+        ket = st.text_area("Keterangan Layanan", value=default_ket, height=80)
+
+        submit = st.form_submit_button("Generate WhatsApp Text")
+
+    if submit:
+        jt_fmt = format_rupiah(jt)
+        trf_fmt = format_rupiah(trf)
+        bl_fmt = format_rupiah(bl)
+
+        def fmt_heading(txt): return f"*{txt}*"
+        def fmt_value(txt): return f"_{txt}_" if jenis == "Langganan" else f"*{txt}*"
+        bullet = "•"
+        sep = "_______________________________"
+
+        teks_output = f"""
+{bullet} {fmt_heading(f"TRANSAKSI NO. {transaksi_no}")}
+{sep}
+{bullet} {fmt_heading('DATA NASABAH')}
+   {bullet} Nama Nasabah : {fmt_value(nama)}
+   {bullet} Jenis Nasabah : {fmt_value(jenis)}
+   {bullet} Kelas Nasabah : {fmt_value(kelas)}
+{sep}
+{bullet} {fmt_heading('DATA TRANSAKSI')}
+   {bullet} Jenis Gestun : {fmt_value(j_g)}
+   {bullet} Metode Gestun : {fmt_value(metode)}
+   {bullet} Jenis Layanan Transfer: {fmt_value(lay)}
+   {bullet} Produk & Sub Produk : {fmt_value(prod)}
+   {bullet} Rate Jual : {fmt_value(rt_str)}
+{sep}
+{bullet} {fmt_heading('RANGKUMAN BIAYA DAN TRANSAKSI')}
+   {bullet} Jumlah Transaksi : {fmt_value(jt_fmt)}
+   {bullet} Biaya Layanan : {fmt_value(bl_fmt)}
+   {bullet} Keterangan Layanan : {fmt_value(ket)}
+{sep}
+{bullet} {fmt_heading(f"Jumlah Transfer {trf_fmt}")}
+"""
+        st.code(teks_output, language="text")
+
+
 # =================================
-# MENU 2: PEMBAGIAN TRANSAKSI EDC
-# =================================
+# MENU 3: PEMBAGIAN TRANSAKSI EDC
+# ================================= 
 elif menu == "Pembagian Transaksi EDC":
     st.header("🧮 Pembagian Transaksi ke Mesin EDC")
 
@@ -225,178 +396,3 @@ elif menu == "Pembagian Transaksi EDC":
             st.warning(f"Sisa yang belum terbagi: {format_rupiah(sisa)}")
         else:
             st.success("Semua transaksi sudah terbagi ke mesin EDC.")
-
-# =============================================
-# MENU 3: INPUT DATA TRANSAKSI GESTUN
-# =============================================
-elif menu == "Input Data Transaksi Gestun":
-    st.title("Form Input Data Transaksi Gestun")
-
-    # --- Formatted numeric inputs (thousands separator) – outside form ---
-    jt_str = st.text_input(
-        "Jumlah Transaksi (Rp)",
-        key="jt_str",
-        on_change=format_rupiah_input,
-        args=("jt_str",)
-    )
-    trf_str = st.text_input(
-        "Jumlah Transfer (Rp)",
-        key="trf_str",
-        on_change=format_rupiah_input,
-        args=("trf_str",)
-    )
-
-    # parse to integer
-    raw_jt = jt_str.replace(".", "")
-    raw_tr = trf_str.replace(".", "")
-    jt  = int(raw_jt) if raw_jt.isdigit() else 0
-    trf = int(raw_tr) if raw_tr.isdigit() else 0
-
-    # Pilihan Biaya Tambahan & Layanan Transfer otomatis
-    biaya_opsi = {
-        "Biaya administrasi nasabah baru (Rp10.000)": 10000,
-        "Biaya layanan super kilat (Rp18.000)": 18000,
-        "Biaya layanan kilat (Rp15.000)": 15000,
-        "Biaya transfer beda bank (Rp10.000)": 10000,
-        "Tidak ada tambahan biaya layanan": 0
-    }
-    layanan_transfer = st.selectbox(
-        "Pilih Layanan Transfer:", ["Normal", "Kilat", "Super Kilat"]
-    )
-    biaya_tambahan_opsi = [
-        k for k in biaya_opsi
-        if "layanan kilat" not in k.lower()
-        and "super kilat" not in k.lower()
-        and "tidak ada" not in k.lower()
-    ]
-    biaya_pilihan = st.multiselect(
-        "Pilih Biaya Tambahan Lainnya:", biaya_tambahan_opsi
-    )
-    biaya_total = sum(biaya_opsi[b] for b in biaya_pilihan)
-    if layanan_transfer == "Kilat":
-        biaya_total += biaya_opsi["Biaya layanan kilat (Rp15.000)"]
-    elif layanan_transfer == "Super Kilat":
-        biaya_total += biaya_opsi["Biaya layanan super kilat (Rp18.000)"]
-
-    # update bl
-    bl = biaya_total
-
-    with st.form(key="form3"):
-        # TRANSAKSI NO. & DATA NASABAH
-        transaksi_no = st.text_input("No. Transaksi")
-        nama         = st.text_input("Nama Nasabah")
-        jenis        = st.selectbox(
-            "Jenis Nasabah", ["Langganan", "Baru"]
-        )
-        kelas        = st.selectbox(
-            "Kelas Nasabah", [
-                "Non Member", "Member Gold",
-                "Member Platinum", "Member Anggota Koperasi"
-            ]
-        )
-        # Bank Tujuan untuk biaya transfer
-        bank = st.selectbox(
-            "Bank Tujuan", ["BCA", "Lainnya"]
-        )
-        st.markdown("---")
-
-        # Tampilkan Biaya Layanan read-only
-        st.number_input(
-            "Biaya Layanan (Rp)",
-            value=bl,
-            format="%d",
-            disabled=True,
-            help="Biaya layanan dihitung otomatis"
-        )
-        st.markdown("---")
-
-        # DATA TRANSAKSI
-        j_g    = st.selectbox("Jenis Gestun", ["Kotor", "Bersih"])
-        metode = st.selectbox("Metode Gestun", ["Konven", "Online"])
-        lay    = st.selectbox(
-            "Jenis Layanan Transfer", ["Normal", "Kilat", "Super Kilat"]
-        )
-        st.markdown("---")
-
-        # PRODUK & SUB PRODUK
-        prod = st.text_input("Produk & Sub Produk")
-        st.markdown("---")
-
-        # RATE JUAL
-        rt_type = st.selectbox("Tipe Rate Jual", ["%", "Rp"])
-        label   = "Rate Jual (%)" if rt_type == "%" else "Rate Jual (Rp)"
-        if rt_type == "Rp":
-            rt_val = st.number_input(
-                label, min_value=0, step=100, format="%d"
-            )
-            rt_str = format_rupiah(rt_val)
-        else:
-            rt_percent = st.number_input(
-                label, min_value=0.0, max_value=100.0,
-                step=0.1, format="%.2f"
-            )
-            rt_str = f"{rt_percent:.2f}%"
-        st.markdown("---")
-
-        # KETERANGAN LAYANAN otomatis berdasarkan aturan (skip Normal transfer)
-        lines = []
-        if jenis == "Baru":
-            lines.append("Biaya Layanan Administrasi Nasabah Baru")
-        if bank != "BCA":
-            lines.append("Biaya Layanan Transfer selain Bank BCA")
-        if lay == "Kilat":
-            lines.append("Biaya Layanan Transfer Kilat")
-        elif lay == "Super Kilat":
-            lines.append("Biaya Layanan Transfer Super Kilat")
-        default_ket = " & ".join(lines) if lines else ""
-
-        ket = st.text_area(
-            "Keterangan Layanan", value=default_ket, height=80
-        )
-
-        submit = st.form_submit_button("Generate WhatsApp Text")
-
-    if submit:
-        # Format numeric untuk output
-        jt_fmt  = format_rupiah(jt)
-        bl_fmt  = format_rupiah(bl)
-        trf_fmt = format_rupiah(trf)
-
-        # Heading bold default
-        def fmt_heading(txt):
-            return f"*{txt}*"
-
-        # Value formatting based on jenis nasabah
-        def fmt_value(txt):
-            if jenis == "Langganan":
-                return f"_{txt}_"
-            return f"*{txt}*"
-
-        bullet = "•"
-        sep    = "_______________________________"
-
-        teks_output = f"""
-{bullet} {fmt_heading(f"TRANSAKSI NO. {transaksi_no}")}
-{sep}
-{bullet} {fmt_heading('DATA NASABAH')}
-   {bullet} Nama Nasabah : {fmt_value(nama)}
-   {bullet} Jenis Nasabah : {fmt_value(jenis)}
-   {bullet} Kelas Nasabah : {fmt_value(kelas)}
-{sep}
-{bullet} {fmt_heading('DATA TRANSAKSI')}
-   {bullet} Jenis Gestun : {fmt_value(j_g)}
-   {bullet} Metode Gestun : {fmt_value(metode)}
-   {bullet} Jenis Layanan Transfer: {fmt_value(lay)}
-   {bullet} Produk & Sub Produk : {fmt_value(prod)}
-   {bullet} Rate Jual : {fmt_value(rt_str)}
-{sep}
-{bullet} {fmt_heading('RANGKUMAN BIAYA DAN TRANSAKSI')}
-   {bullet} Jumlah Transaksi : {fmt_value(jt_fmt)}
-   {bullet} Biaya Layanan : {fmt_value(bl_fmt)}
-   {bullet} Keterangan Layanan : {fmt_value(ket)}
-{sep}
-{bullet} {fmt_heading(f"Jumlah Transfer {trf_fmt}")}
-"""
-        st.code(teks_output, language="text")
-else:
-    st.info("Pilih menu di sidebar untuk memulai.")
