@@ -1,8 +1,12 @@
+from __future__ import annotations
+
 import streamlit as st
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo  # Python 3.9+
 import streamlit.components.v1 as components
-
+import random
+from typing import List, Tuple, Dict
+import pandas as pd
 
 # --- Fungsi Pendukung ---
 def estimasi_durasi(layanan):
@@ -50,13 +54,162 @@ def hitung_pembagian_edc_prioritas(total_transaksi, mesin_edc):
 def fmt_rp(val):
     return f"Rp. {int(val):,}".replace(",", ".")
 
+# Helper: For Random split_transaction_exact 
+RNG = random.SystemRandom()
+SAFETY_GAP = 1_000  # stay below hard limit by Rp1.000
+
+def rp(x: int) -> str:
+    """Rupiah formatter: 1000000 -> 'Rp1,000,000'"""
+    return f"Rp{x:,}"
+
+
+def _is_non_round(val: int) -> bool:
+    return val % 1000 != 0
+
+
+def _rand_adjust(val: int, low: int = 237, high: int = 937) -> int:
+    if _is_non_round(val):
+        return 0
+    high = min(high, max(low + 1, val - 1))
+    return RNG.randrange(low, high)
+
+# Core algorithm: split_transaction_exact
+# ----------------------------------------------------------------------------------
+
+def split_transaction_exact(total: int, machines: List[Tuple[str, int]], max_swipes: int = 2) -> List[Dict]:
+    """Split *total* across *machines*, keeping NOMINAL < limit‑SAFETY_GAP,
+    non‑round, max *max_swipes* per machine, and guaranteeing exact total.
+    Returns list of dict {'machine': str, 'amount': int}.
+    """
+    machines = sorted(machines, key=lambda x: -x[1])  # largest limit first
+    counts = {m: 0 for m, _ in machines}
+    remaining = total
+    parts: List[Dict] = []
+
+    # Greedy allocation
+    while remaining > 0:
+        progressed = False
+        # 1. If remaining fits one machine
+        for name, limit in machines:
+            if counts[name] < max_swipes and remaining <= limit - SAFETY_GAP:
+                amt = remaining - _rand_adjust(remaining)
+                if amt == 0:
+                    amt = remaining - 777
+                parts.append({"machine": name, "amount": amt})
+                counts[name] += 1
+                remaining -= amt
+                progressed = True
+                break
+        if remaining == 0:
+            break
+        if progressed:
+            continue
+        # 2. Normal slice
+        for name, limit in machines:
+            if counts[name] >= max_swipes:
+                continue
+            base = min(limit - SAFETY_GAP, remaining)
+            amt = base - _rand_adjust(base)
+            amt = max(500, amt)
+            parts.append({"machine": name, "amount": amt})
+            counts[name] += 1
+            remaining -= amt
+            progressed = True
+            if remaining <= 0:
+                break
+        if not progressed:
+            raise RuntimeError("Unable to allocate remaining amount with given limits/swipes.")
+
+    # Exact‑total adjustment
+    current_total = sum(p["amount"] for p in parts)
+    diff = total - current_total
+
+    if diff != 0:
+        # Try single placement
+        for p in parts:
+            limit = dict(machines)[p["machine"]]
+            headroom = (limit - SAFETY_GAP) - p["amount"]
+            if 0 < diff <= headroom and _is_non_round(p["amount"] + diff):
+                p["amount"] += diff
+                diff = 0
+                break
+            if diff < 0 and abs(diff) < p["amount"] - 500 and _is_non_round(p["amount"] + diff):
+                p["amount"] += diff
+                diff = 0
+                break
+        # Split diff if needed
+        if diff != 0:
+            for p in parts:
+                if diff == 0:
+                    break
+                limit = dict(machines)[p["machine"]]
+                headroom = (limit - SAFETY_GAP) - p["amount"]
+                step = diff if abs(diff) <= headroom else headroom
+                if step == 0:
+                    continue
+                if _is_non_round(p["amount"] + step):
+                    p["amount"] += step
+                    diff -= step
+            if diff != 0:
+                parts[-1]["amount"] += diff
+                diff = 0
+
+    assert sum(p["amount"] for p in parts) == total, "Total mismatch after adjustment!"
+    return parts
+
+def menu_pembagian_edc():
+    st.header("🧮 Proporsional Transaksi Besar")
+
+    total_transaksi = st.number_input(
+        "Masukkan Total Transaksi (Rp)", min_value=100_000_000, step=10_000_000, format="%d"
+    )
+    max_swipes = st.number_input(
+        "Maksimum Gesek per Mesin", min_value=1, max_value=5, value=2
+    )
+    jumlah_mesin = st.number_input(
+        "Masukkan Jumlah Mesin EDC", min_value=1, max_value=20, value=3, step=1
+    )
+
+    st.subheader("Detail Setiap Mesin EDC")
+    mesin_edc_input = []
+    for i in range(int(jumlah_mesin)):
+        col1, col2 = st.columns([3, 2])
+        with col1:
+            nama = st.text_input(f"Nama Mesin EDC {i+1}", value=f"EDC {i+1}", key=f"nama_{i}")
+        with col2:
+            batas = st.number_input(
+                f"Batas Maks per Swipe (Rp)", min_value=30_000_000, step=10_000_000, key=f"batas_{i}"
+            )
+        mesin_edc_input.append((nama, int(batas)))
+
+    if st.button("Hitung Pembagian") and total_transaksi > 0:
+        try:
+            plan = split_transaction_exact(int(total_transaksi), mesin_edc_input, int(max_swipes))
+        except RuntimeError as e:
+            st.error(str(e))
+        else:
+            df = pd.DataFrame(plan)
+            df["amount"] = df["amount"].apply(rp)
+            st.success("### Rincian Pembagian")
+            st.dataframe(df, use_container_width=True)
+            st.markdown(f"**TOTAL:** {rp(sum(p['amount'] for p in plan))}")
+            st.download_button(
+                "📥 Download CSV", df.to_csv(index=False).encode(), "split_plan.csv", "text/csv"
+            )
+
+# If you want to test this file standalone, uncomment below:
+# if __name__ == "__main__":
+#     import streamlit.runtime.scriptrunner.script_run_context as stc
+#     if stc.get_script_run_ctx():
+#         menu_pembagian_edc()
+
 # --- App Config ---
 st.set_page_config(page_title="Input Data Transaksi Gestun", layout="centered")
 
 menu = st.sidebar.selectbox("Pilih Menu", [
     "Hitung Nominal Transaksi",
-    "Input Data Transaksi Gestun",
-    "Pembagian Transaksi EDC",
+    "Input Data Transaksi",
+    "Proporsional Transaksi Besar",
 ])
 
 # ===============================
@@ -334,43 +487,9 @@ elif menu == "Input Data Transaksi Gestun":
 """
         st.code(teks_output, language="text")
 
+# =============================================
+# MENU 3: Pembagian Transaksi EDC
+# =============================================
 
-
-# =================================
-# MENU 3: PEMBAGIAN TRANSAKSI EDC
-# ================================= 
-elif menu == "Pembagian Transaksi EDC":
-    st.header("🧮 Pembagian Transaksi ke Mesin EDC")
-
-    total_transaksi = st.number_input(
-        "Masukkan Total Transaksi (Rp)", min_value=0, step=1_000_000, format="%d"
-    )
-    jumlah_mesin = st.number_input(
-        "Masukkan Jumlah Mesin EDC", min_value=1, max_value=20, step=1
-    )
-
-    st.subheader("Input Detail Setiap Mesin EDC")
-    mesin_edc = []
-    for i in range(jumlah_mesin):
-        col1, col2, col3 = st.columns([2, 2, 1])
-        with col1:
-            nama = st.text_input(f"Nama Mesin EDC {i+1}", value=f"EDC {i+1}", key=f"nama_{i}")
-        with col2:
-            batas = st.number_input(f"Batas Maks (Rp)", min_value=0, step=1_000_000, key=f"batas_{i}")
-        with col3:
-            prioritas = st.number_input(f"Prioritas", min_value=1, max_value=jumlah_mesin, key=f"prio_{i}")
-        mesin_edc.append({
-            'nama': nama,
-            'batas': batas,
-            'prioritas': prioritas
-        })
-
-    if st.button("Hitung Pembagian"):
-        pembagian, sisa = hitung_pembagian_edc_prioritas(total_transaksi, mesin_edc)
-        st.subheader("Hasil Pembagian:")
-        for nama_mesin, nominal_edc in pembagian:
-            st.write(f"{nama_mesin}: {format_rupiah(nominal_edc)}")
-        if sisa > 0:
-            st.warning(f"Sisa yang belum terbagi: {format_rupiah(sisa)}")
-        else:
-            st.success("Semua transaksi sudah terbagi ke mesin EDC.")
+elif menu == "Proporsional Transaksi Besar":
+    menu_pembagian_edc()
