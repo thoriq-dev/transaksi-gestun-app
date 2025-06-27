@@ -204,7 +204,7 @@ def menu_pembagian_edc():
 #         menu_pembagian_edc()
 
 # --- App Config ---
-st.set_page_config(page_title="Input Data Transaksi Gestun", layout="centered")
+st.set_page_config(page_title="Input Data Transaksi", layout="centered")
 
 menu = st.sidebar.selectbox("Pilih Menu", [
     "Hitung Nominal Transaksi",
@@ -341,10 +341,10 @@ if menu == "Hitung Nominal Transaksi":
                 st.error("Masukkan nominal transaksi/transf sebesar lebih dari 0 terlebih dahulu.")
 
 # =============================================
-# MENU 2: INPUT DATA TRANSAKSI GESTUN
+# MENU 2: INPUT DATA TRANSAKSI
 # =============================================
-elif menu == "Input Data Transaksi Gestun":
-    st.title("Form Input Data Transaksi Gestun")
+elif menu == "Input Data Transaksi":
+    st.title("Form Input Data Transaksi")
 
     # Semua opsi biaya tambahan (tidak ditampilkan ke user)
     biaya_opsi = {
