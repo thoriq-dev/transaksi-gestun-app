@@ -161,7 +161,7 @@ def menu_pembagian_edc():
     st.header("🧮 Proporsional Transaksi Besar")
 
     total_transaksi = st.number_input(
-        "Masukkan Total Transaksi (Rp)", min_value=100_000_000, step=10_000_000, format="%d"
+        "Masukkan Total Transaksi (Rp)", min_value=50_000_000, step=10_000_000, format="%d"
     )
     max_swipes = st.number_input(
         "Maksimum Gesek per Mesin", min_value=1, max_value=5, value=2
