@@ -178,7 +178,7 @@ def menu_pembagian_edc():
             nama = st.text_input(f"Nama Mesin EDC {i+1}", value=f"EDC {i+1}", key=f"nama_{i}")
         with col2:
             batas = st.number_input(
-                f"Batas Maks per Swipe (Rp)", min_value=30_000_000, step=10_000_000, key=f"batas_{i}"
+                f"Batas Maks per Swipe (Rp)", min_value=10_000_000, step=10_000_000, key=f"batas_{i}"
             )
         mesin_edc_input.append((nama, int(batas)))
 
