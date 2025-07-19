@@ -393,7 +393,7 @@ elif menu == "Input Data Transaksi":
             media = st.selectbox("Media Pencairan", [
                 "Mesin EDC - BRI Vilan Fashion",
                 "Mesin EDC - BCA Idaman Clothes",
-                "Mesin EDC - BNI Showroom Tonnggoh",
+                "Mesin EDC - BNI Showroom Tonggoh",
                 "Mesin EDC - BCA AF Bekasi"
             ])
         with col10:
