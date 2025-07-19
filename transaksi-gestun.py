@@ -399,23 +399,60 @@ elif menu == "Input Data Transaksi":
         with col10:
             lay = st.selectbox("Jenis Layanan Transfer", [
                 "Normal 2 Jam - 2 Jam 30 Menit",
-                "Kilat 1 Jam - 1 Jam 30 Menit",
-                "Super Kilat 30 Menit - 1 Jam"
+                "Kilat 30 Menit - 40 Menit",
+                "Super Kilat 10 Menit - 20 Menit"
             ])
+        # === BARIS 6: PILIH TIPE RATE JUAL ===
+        rt_type = st.radio(
+            "Tipe Rate Jual",
+            ["Persentase (%)", "Nominal (Rp)"],
+            index=0,
+            horizontal=True
+        )
 
-        # === BARIS 6 ===
+        # === BARIS 7: INPUT RATE SESUAI TIPE ===
         col11, col12 = st.columns(2)
         with col11:
-            rt_percent = st.number_input("Rate Jual (%)", min_value=0.0, max_value=100.0, step=0.1, format="%.2f")
+            if rt_type == "Persentase (%)":
+                rt_percent = st.number_input(
+                    "Rate Jual (%)",
+                    min_value=0.0,
+                    max_value=100.0,
+                    step=0.1,
+                    format="%.2f",
+                    key="rt_percent"
+                )
+                nominal_rate = 0
+            else:
+                nominal_rate = st.number_input(
+                    "Rate Jual (Rp)",
+                    min_value=0,
+                    step=1000,
+                    format="%d",
+                    key="rt_nominal"
+                )
+                rt_percent = 0.0
 
-        rt_str = f"{rt_percent:.2f}%"
-        rate_decimal = rt_percent / 100 if rt_percent else 0
+        with col12:
+            # Opsional: helper text
+            if rt_type == "Persentase (%)":
+                st.write("Masukkan persen, contoh: 2.50")
+            else:
+                st.write("Masukkan nominal, contoh: 10000")
+
+        # === BARIS 8: FORMAT STRING & DECIMAL ===
+        if rt_type == "Persentase (%)":
+            rt_str = f"{rt_percent:.2f}%"
+        else:
+            rt_str = f"Rp {nominal_rate:,}"
+        rate_decimal = rt_percent / 100
+
 
         # Hitung biaya layanan otomatis
         biaya_otomatis = 0
-        if lay == "Kilat":
+        if lay == "Kilat 30 Menit - 40 Menit":
             biaya_otomatis += biaya_opsi["Biaya layanan kilat (Rp15.000)"]
-        elif lay == "Super Kilat":
+        elif lay == "Super Kilat 10 Menit - 20 Menit":
             biaya_otomatis += biaya_opsi["Biaya layanan super kilat (Rp18.000)"]
         if jenis == "Baru":
             biaya_otomatis += biaya_opsi["Biaya administrasi nasabah baru (Rp10.000)"]
@@ -457,9 +494,9 @@ elif menu == "Input Data Transaksi":
             lines.append("Biaya Layanan Administrasi Nasabah Baru")
         if bank != "BCA":
             lines.append("Biaya Layanan Transfer diluar Bank BCA")
-        if lay == "Kilat":
+        if lay == "Kilat 30 Menit - 40 Menit":
             lines.append("Biaya Layanan Transfer Kilat")
-        elif lay == "Super Kilat":
+        elif lay == "Super Kilat 10 Menit - 20 Menit":
             lines.append("Biaya Layanan Transfer Super Kilat")
         default_ket = " & ".join(lines) if lines else ""
 
