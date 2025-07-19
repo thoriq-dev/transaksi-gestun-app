@@ -387,12 +387,26 @@ elif menu == "Input Data Transaksi":
         with col8:
             prod = st.text_input("Produk & Sub Produk")
 
-        # === BARIS 5 ===
+        # === BARIS 5: MEDIA & LAYANAN ===
         col9, col10 = st.columns(2)
         with col9:
-            rt_percent = st.number_input("Rate Jual (%)", min_value=0.0, max_value=100.0, step=0.1, format="%.2f")
+            media = st.selectbox("Media Pencairan", [
+                "Mesin EDC - BRI Vilan Fashion",
+                "Mesin EDC - BCA Idaman Clothes",
+                "Mesin EDC - BNI Showroom Tonnggoh",
+                "Mesin EDC - BCA AF Bekasi"
+            ])
         with col10:
-            lay = st.selectbox("Jenis Layanan Transfer", ["Normal", "Kilat", "Super Kilat"])
+            lay = st.selectbox("Jenis Layanan Transfer", [
+                "Normal 2 Jam - 2 Jam 30 Menit",
+                "Kilat 1 Jam - 1 Jam 30 Menit",
+                "Super Kilat 30 Menit - 1 Jam"
+            ])
+
+        # === BARIS 6 ===
+        col11, col12 = st.columns(2)
+        with col11:
+            rt_percent = st.number_input("Rate Jual (%)", min_value=0.0, max_value=100.0, step=0.1, format="%.2f")
 
         rt_str = f"{rt_percent:.2f}%"
         rate_decimal = rt_percent / 100 if rt_percent else 0
@@ -474,6 +488,7 @@ elif menu == "Input Data Transaksi":
 {bullet} {fmt_heading('DATA TRANSAKSI')}
    {bullet} Jenis Gestun : {fmt_value(j_g)}
    {bullet} Metode Gestun : {fmt_value(metode)}
+   {bullet} Media Pencairan : {fmt_value(media)}
    {bullet} Jenis Layanan Transfer: {fmt_value(lay)}
    {bullet} Produk & Sub Produk : {fmt_value(prod)}
    {bullet} Rate Jual : {fmt_value(rt_str)}
