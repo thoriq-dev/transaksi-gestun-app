@@ -357,14 +357,14 @@ elif menu == "Input Data Transaksi":
     with st.form(key="form3"):
         st.subheader("🧾 Data Nasabah & Transaksi")
 
-        # === BARIS 1 ===
+        # === Input Data Nasabah ===
         col1, col2 = st.columns(2)
         with col1:
             transaksi_no = st.number_input("No. Transaksi", min_value=1, step=1, format="%d")
         with col2:
             nama = st.text_input("Nama Nasabah")
 
-        # === BARIS 2 ===
+        # === Pilihan Jenis & Kelas ===
         col3, col4 = st.columns(2)
         with col3:
             jenis = st.selectbox("Jenis Nasabah", ["Langganan", "Baru"])
@@ -373,21 +373,21 @@ elif menu == "Input Data Transaksi":
                 "Non Member", "Member Gold", "Member Platinum", "Member Anggota Koperasi"
             ])
 
-        # === BARIS 3 ===
+        # === Bank & Jenis Gestun ===
         col5, col6 = st.columns(2)
         with col5:
             bank = st.selectbox("Bank Tujuan", ["BCA", "Lainnya"])
         with col6:
             j_g = st.selectbox("Jenis Gestun", ["Kotor", "Bersih"])
 
-        # === BARIS 4 ===
+        # === Metode & Produk ===
         col7, col8 = st.columns(2)
         with col7:
             metode = st.selectbox("Metode Gestun", ["Konven", "Online"])
         with col8:
             prod = st.text_input("Produk & Sub Produk")
 
-        # === BARIS 5: MEDIA & LAYANAN ===
+        # === Media & Layanan Transfer ===
         col9, col10 = st.columns(2)
         with col9:
             media = st.selectbox("Media Pencairan", [
@@ -402,51 +402,50 @@ elif menu == "Input Data Transaksi":
                 "Kilat 30 Menit - 40 Menit",
                 "Super Kilat 10 Menit - 20 Menit"
             ])
-        # === BARIS 6: PILIH TIPE RATE JUAL ===
+
+        # === Pilih Tipe Rate Jual & Input Rate ===
         rt_type = st.radio(
             "Tipe Rate Jual",
             ["Persentase (%)", "Nominal (Rp)"],
             index=0,
             horizontal=True
         )
+        # Ambil nilai rate sesuai tipe, baru hitung rate_decimal
+        if rt_type == "Persentase (%)":
+            rt_percent = st.number_input(
+                "Rate Jual (%)",
+                min_value=0.0,
+                max_value=100.0,
+                step=0.1,
+                format="%.2f",
+                key="rt_percent"
+            )
+            nominal_rate = 0
+            rate_decimal = rt_percent / 100
+        else:
+            nominal_rate = st.number_input(
+                "Rate Jual (Rp)",
+                min_value=0,
+                step=1000,
+                format="%d",
+                key="rt_nominal"
+            )
+            rt_percent = 0.0
+            rate_decimal = 0
 
-        # === BARIS 7: INPUT RATE SESUAI TIPE ===
+        # Helper text untuk rate
         col11, col12 = st.columns(2)
-        with col11:
-            if rt_type == "Persentase (%)":
-                rt_percent = st.number_input(
-                    "Rate Jual (%)",
-                    min_value=0.0,
-                    max_value=100.0,
-                    step=0.1,
-                    format="%.2f",
-                    key="rt_percent"
-                )
-                nominal_rate = 0
-            else:
-                nominal_rate = st.number_input(
-                    "Rate Jual (Rp)",
-                    min_value=0,
-                    step=1000,
-                    format="%d",
-                    key="rt_nominal"
-                )
-                rt_percent = 0.0
-
         with col12:
-            # Opsional: helper text
             if rt_type == "Persentase (%)":
                 st.write("Masukkan persen, contoh: 2.50")
             else:
                 st.write("Masukkan nominal, contoh: 10000")
 
-        # === BARIS 8: FORMAT STRING & DECIMAL ===
+        # Parse string rate untuk ditampilkan
         if rt_type == "Persentase (%)":
             rt_str = f"{rt_percent:.2f}%"
         else:
             rt_str = f"Rp {nominal_rate:,}"
-        rate_decimal = rt_percent / 100
-
 
         # Hitung biaya layanan otomatis
         biaya_otomatis = 0
@@ -458,26 +457,41 @@ elif menu == "Input Data Transaksi":
             biaya_otomatis += biaya_opsi["Biaya administrasi nasabah baru (Rp10.000)"]
         if bank != "BCA":
             biaya_otomatis += biaya_opsi["Biaya transfer beda bank (Rp10.000)"]
-
         bl = biaya_otomatis
 
-        # HITUNG JUMLAH TRANSAKSI & TRANSFER
+        # HITUNG JUMLAH TRANSAKSI & TRANSFER setelah semua input tersedia
         jt, trf = 0, 0
-
         if j_g == "Kotor":
-            # Gunakan input angka untuk Jumlah Transaksi
-            jt = st.number_input("Jumlah Transaksi (Rp)", min_value=0, step=200000, format="%d", key="jt_input")
-            trf = jt - int(jt * rate_decimal) - bl
+            jt = st.number_input(
+                "Jumlah Transaksi (Rp)",
+                min_value=0,
+                step=200000,
+                format="%d",
+                key="jt_input"
+            )
+            # Hitung potongan sesuai tipe rate
+            if rt_type == "Persentase (%)":
+                potongan = int(jt * rate_decimal)
+            else:
+                potongan = nominal_rate
+            trf = jt - potongan - bl
             trf_str = format_rupiah(trf)
             st.text_input("Jumlah Transfer (Rp)", value=trf_str, disabled=True)
-
         else:
-            # Gunakan input angka untuk Jumlah Transfer
-            trf = st.number_input("Jumlah Transfer (Rp)", min_value=0, step=200000, format="%d", key="trf_input")
-            jt = int((trf / (1 - rate_decimal)) + bl) if rate_decimal < 1 else 0
+            trf = st.number_input(
+                "Jumlah Transfer (Rp)",
+                min_value=0,
+                step=200000,
+                format="%d",
+                key="trf_input"
+            )
+            # Hitung jumlah transaksi sesuai tipe rate
+            if rt_type == "Persentase (%)":
+                jt = int((trf / (1 - rate_decimal)) + bl) if rate_decimal < 1 else 0
+            else:
+                jt = trf + nominal_rate + bl
             jt_str = format_rupiah(jt)
             st.text_input("Jumlah Transaksi (Rp)", value=jt_str, disabled=True)
-
 
         # BIAYA LAYANAN
         st.number_input(
@@ -488,7 +502,7 @@ elif menu == "Input Data Transaksi":
             help="Biaya layanan dihitung otomatis"
         )
 
-        # KETERANGAN OTOMATIS
+        # Keterangan otomatis
         lines = []
         if jenis == "Baru":
             lines.append("Biaya Layanan Administrasi Nasabah Baru")
@@ -499,11 +513,11 @@ elif menu == "Input Data Transaksi":
         elif lay == "Super Kilat 10 Menit - 20 Menit":
             lines.append("Biaya Layanan Transfer Super Kilat")
         default_ket = " & ".join(lines) if lines else ""
-
         ket = st.text_area("Keterangan Layanan", value=default_ket, height=80)
 
         submit = st.form_submit_button("Generate WhatsApp Text")
 
+    # OUTPUT setelah submit
     if submit:
         jt_fmt = format_rupiah(jt)
         trf_fmt = format_rupiah(trf)
@@ -538,6 +552,7 @@ elif menu == "Input Data Transaksi":
 {bullet} {fmt_heading(f"Jumlah Transfer {trf_fmt}")}
 """
         st.code(teks_output, language="text")
+
 
 # =============================================
 # MENU 3: Pembagian Transaksi EDC
