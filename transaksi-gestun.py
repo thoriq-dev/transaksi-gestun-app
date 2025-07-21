@@ -391,9 +391,9 @@ elif menu == "Input Data Transaksi":
         col9, col10 = st.columns(2)
         with col9:
             media = st.selectbox("Media Pencairan", [
+                "Mesin EDC - BNI Showroom Gerlong Tonggoh",
                 "Mesin EDC - BRI Vilan Fashion",
                 "Mesin EDC - BCA Idaman Clothes",
-                "Mesin EDC - BNI Showroom Tonggoh",
                 "Mesin EDC - BCA AF Bekasi"
             ])
         with col10:
@@ -512,7 +512,7 @@ elif menu == "Input Data Transaksi":
             lines.append("Biaya Layanan Transfer Kilat")
         elif lay == "Super Kilat 10 Menit - 20 Menit":
             lines.append("Biaya Layanan Transfer Super Kilat")
-        default_ket = " & ".join(lines) if lines else ""
+        default_ket = " & ".join(lines) if lines else "-"
         ket = st.text_area("Keterangan Layanan", value=default_ket, height=80)
 
         submit = st.form_submit_button("Generate WhatsApp Text")
