@@ -394,6 +394,7 @@ elif menu == "Input Data Transaksi":
                 "Mesin EDC - BNI Showroom Gerlong Tonggoh",
                 "Mesin EDC - BRI Vilan Fashion",
                 "Mesin EDC - BCA Idaman Clothes",
+                "Quick Bill - Zahra Fashion",
                 "Mesin EDC - BCA AF Bekasi"
             ])
         with col10:
