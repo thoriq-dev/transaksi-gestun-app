@@ -16,16 +16,10 @@ st.markdown("""
         font-weight: 700 !important;
     }
 
-    .material-icons {
-        font-family: 'Material Icons' !important;
-        font-weight: normal !important;
-    }
-
-    body {
-        line-height: 1.6;
-    }
     </style>
 """, unsafe_allow_html=True)
+
+
 
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo  # Python 3.9+
