@@ -1,6 +1,25 @@
 from __future__ import annotations
 
 import streamlit as st
+# --- App Config ---
+st.set_page_config(page_title="Input Data Transaksi", layout="centered")
+
+st.markdown("""
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@600;700&display=swap" rel="stylesheet">
+    <style>
+    html, body, p, span, label, h1, h2, h3, h4, h5, h6, div, input, textarea, select, button, [class*="css"] {
+        font-family: 'Noto Sans JP', sans-serif !important;
+        font-weight: 600 !important;
+    }
+
+    h1, h2 {
+        font-weight: 700 !important; 
+    }
+           
+    </style>
+""", unsafe_allow_html=True)
+
+
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo  # Python 3.9+
 import streamlit.components.v1 as components
@@ -202,9 +221,6 @@ def menu_pembagian_edc():
 #     import streamlit.runtime.scriptrunner.script_run_context as stc
 #     if stc.get_script_run_ctx():
 #         menu_pembagian_edc()
-
-# --- App Config ---
-st.set_page_config(page_title="Input Data Transaksi", layout="centered")
 
 menu = st.sidebar.selectbox("Pilih Menu", [
     "Hitung Nominal Transaksi",
