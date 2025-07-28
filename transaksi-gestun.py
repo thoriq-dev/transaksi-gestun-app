@@ -7,17 +7,23 @@ st.set_page_config(page_title="Input Data Transaksi", layout="centered")
 st.markdown("""
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@600;700&display=swap" rel="stylesheet">
     <style>
-    html, body, p, span, label, h1, h2, h3, h4, h5, h6, div, input, textarea, select, button, [class*="css"] {
+    html, body, p, span, label, h1, h2, h3, h4, h5, h6, div, input, textarea, select, button, [class*="css"]:not(.material-icons) {
         font-family: 'Noto Sans JP', sans-serif !important;
         font-weight: 600 !important;
     }
 
     h1, h2 {
-        font-weight: 700 !important; 
+        font-weight: 700 !important;
     }
-           
+
+    /* Jangan ubah elemen dengan class material-icons */
+    .material-icons {
+        font-family: 'Material Icons' !important;
+        font-weight: normal !important;
+    }
     </style>
 """, unsafe_allow_html=True)
+
 
 
 from datetime import datetime, timedelta
