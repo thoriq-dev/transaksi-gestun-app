@@ -7,17 +7,23 @@ st.set_page_config(page_title="Input Data Transaksi", layout="centered")
 st.markdown("""
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@600;700&display=swap" rel="stylesheet">
     <style>
-    /* 1) Global: semua teks biasa pakai Noto Sans JP semi‑bold (600) */
-    html, body, p, span, label, h1, h2, h3, h4, h5, h6, div, input, textarea, select, button, [class*="css"] {
-        font-family: 'Noto Sans JP', sans-serif !important;
-        font-weight: 600 !important;
+    /* 1) Teks utama—hanya di elemen container yang biasa */
+    html, body,
+    p, label,
+    h1, h2, h3, h4, h5, h6,
+    strong, em,
+    li, a,
+    button,
+    input, textarea, select,
+    [class*="css"] {
+      font-family: 'Noto Sans JP', sans-serif !important;
+      font-weight: 600 !important;
     }
 
-    /* 2) Heading lebih tebal (700) */
+    /* 2) Biar judul (h1,h2) makin tebal */
     h1, h2 {
-        font-weight: 700 !important;
+      font-weight: 700 !important;
     }
-
     </style>
 """, unsafe_allow_html=True)
 
