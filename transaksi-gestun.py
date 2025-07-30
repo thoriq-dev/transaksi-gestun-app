@@ -5,9 +5,9 @@ import streamlit as st
 st.set_page_config(page_title="Input Data Transaksi", layout="centered")
 
 st.markdown("""
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@600;700&display=swap" rel="stylesheet">
     <style>
-    /* 1) Teks utama—hanya di elemen container yang biasa */
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@600;700&display=swap');
+    
     html, body,
     p, label,
     h1, h2, h3, h4, h5, h6,
@@ -20,10 +20,25 @@ st.markdown("""
       font-weight: 600 !important;
     }
 
-    /* 2) Biar judul (h1,h2) makin tebal */
     h1, h2 {
       font-weight: 700 !important;
     }
+
+    .stTextInput>div>div>input,
+    .stNumberInput>div>div>input,
+    .stTextArea>div>textarea {
+      font-family: 'Noto Sans JP', sans-serif !important;
+      font-weight: 600 !important;
+    }
+
+    
+    .stSelectbox>div>div>div>div,
+    .stRadio>label,
+    .stMultiSelect>div>div {
+      font-family: 'Noto Sans JP', sans-serif !important;
+      font-weight: 600 !important;
+    }
+            
     </style>
 """, unsafe_allow_html=True)
 
