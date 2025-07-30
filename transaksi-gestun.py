@@ -256,15 +256,49 @@ menu = st.sidebar.selectbox("Pilih Menu", [
 if menu == "Hitung Nominal Transaksi":
     st.header("💰 Hitung Nominal Transaksi")
 
-    # Pilihan jenis & rate
+    # Pilihan jenis perhitungan
     jenis = st.selectbox("Pilih Jenis Perhitungan:", ["Gesek Kotor", "Gesek Bersih"])
-    rate_dict = {
-        "2.5% Visa & Master Card": 0.975,
-        "2.6% Visa & Master Card": 0.974,
-        "3.5% BCA Card": 0.965,
-        "4.7% AMEX": 0.953,
-    }
-    rate_label = st.selectbox("Pilih Rate Jual:", list(rate_dict.keys()))
+
+    # Pilihan tipe rate jual
+    tipe_rate = st.selectbox(
+        "Tipe Rate Jual:",
+        ["Persentase (%)", "Nominal (Rp)"],
+        key="menu1_tipe_rate"
+    )
+
+    # Jika persentase: pilih preset atau custom
+    if tipe_rate == "Persentase (%)":
+        preset_opts = ["Custom", "2.5%", "2.6%", "3.5%", "4.7%"]
+        preset = st.selectbox("Pilih Persentase:", preset_opts, key="menu1_preset")
+
+        if preset != "Custom":
+            # parse dari string preset
+            rt_percent = float(preset.replace("%", ""))
+        else:
+            rt_percent = st.number_input(
+                "Rate Jual (%) (custom):",
+                min_value=0.0,
+                max_value=100.0,
+                step=0.1,
+                format="%.2f",
+                key="menu1_rt_percent"
+            )
+
+        nominal_rate = 0
+        rate_decimal = rt_percent / 100
+        rt_str = f"{rt_percent:.2f}%"
+
+    # Jika nominal tetap
+    else:
+        nominal_rate = st.number_input(
+            "Rate Jual (Rp):",
+            min_value=0,
+            step=1000,
+            format="%d",
+            key="menu1_rt_nominal"
+        )
+        rate_decimal = None
+        rt_str = f"Rp {nominal_rate:,}"
 
     # Pilihan Biaya Tambahan & Layanan Transfer
     biaya_opsi = {
@@ -275,7 +309,11 @@ if menu == "Hitung Nominal Transaksi":
         "Tidak ada tambahan biaya layanan": 0
     }
 
-    layanan_transfer = st.selectbox("Pilih Layanan Transfer:", ["Normal", "Kilat", "Super Kilat"])
+    layanan_transfer = st.selectbox(
+        "Pilih Layanan Transfer:",
+        ["Normal", "Kilat", "Super Kilat"],
+        key="menu1_layanan_transfer"
+    )
     biaya_tambahan_opsi = [
         k for k in biaya_opsi
         if "layanan kilat" not in k.lower()
@@ -283,7 +321,11 @@ if menu == "Hitung Nominal Transaksi":
         and "tidak ada" not in k.lower()
     ]
 
-    biaya_pilihan = st.multiselect("Pilih Biaya Tambahan Lainnya:", biaya_tambahan_opsi)
+    biaya_pilihan = st.multiselect(
+        "Pilih Biaya Tambahan Lainnya:",
+        biaya_tambahan_opsi,
+        key="menu1_biaya_pilihan"
+    )
     biaya_total = sum(biaya_opsi[b] for b in biaya_pilihan)
     if layanan_transfer == "Kilat":
         biaya_total += biaya_opsi["Biaya layanan kilat (Rp15.000)"]
@@ -291,39 +333,30 @@ if menu == "Hitung Nominal Transaksi":
         biaya_total += biaya_opsi["Biaya layanan super kilat (Rp18.000)"]
 
     st.write(f"▶️ Total Biaya Tambahan: {format_rupiah(biaya_total)}")
-    rate = rate_dict.get(rate_label, 1)
 
-    # --- Callback untuk memformat input secara real-time ---
+    # Callback format rupiah
     def format_rupiah_input(key):
         txt = st.session_state.get(key, "")
         digits = "".join([c for c in txt if c.isdigit()])
         st.session_state[key] = "{:,}".format(int(digits)).replace(",", ".") if digits else ""
 
-    # Inisialisasi session_state (hanya sekali)
     if "nominal_input" not in st.session_state:
         st.session_state.nominal_input = ""
 
-    # Text input yang memanggil callback format_nominal
     st.text_input(
-    label=f"Masukkan nominal {'Transaksi (Gesek Kotor)' if jenis == 'Gesek Kotor' else 'Transfer Diterima (Gesek Bersih)'} (Rp):",
-    key="nominal_input",
-    on_change=format_rupiah_input,
-    args=("nominal_input",),
+        label=f"Masukkan nominal {'Transaksi (Gesek Kotor)' if jenis == 'Gesek Kotor' else 'Transfer Diterima (Gesek Bersih)'} (Rp):",
+        key="nominal_input",
+        on_change=format_rupiah_input,
+        args=("nominal_input",),
     )
 
-    # <<–– Blok konversi harus tetap ada ––>>
     raw = st.session_state.nominal_input.replace(".", "")
-    if raw.isdigit():
-        nominal_int = int(raw)
-    else:
-        nominal_int = 0
+    nominal_int = int(raw) if raw.isdigit() else 0
 
-    # --- Tombol Hitung Sekarang (harus di dalam blok ini) ---
+    # Hitung & tampilkan hasil
     if st.button("Hitung Sekarang", disabled=(nominal_int <= 0)):
         waktu_mulai = datetime.now(ZoneInfo("Asia/Jakarta"))
-        estimasi_selesai_transfer = estimasi_selesai(
-            waktu_mulai, estimasi_durasi(layanan_transfer)
-        )
+        estimasi_selesai_transfer = estimasi_selesai(waktu_mulai, estimasi_durasi(layanan_transfer))
 
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
@@ -336,7 +369,7 @@ if menu == "Hitung Nominal Transaksi":
                 unsafe_allow_html=True
             )
             st.markdown(
-                f"<p style='font-size:1.35rem;'><strong>➤ Rate Jual:</strong> {tampilkan_rate(rate)}</p>",
+                f"<p style='font-size:1.35rem;'><strong>➤ Rate Jual:</strong> {rt_str}</p>",
                 unsafe_allow_html=True
             )
             st.markdown(
@@ -344,39 +377,38 @@ if menu == "Hitung Nominal Transaksi":
                 unsafe_allow_html=True
             )
 
-            if nominal_int > 0:
-                if jenis == "Gesek Kotor":
-                    nominal_transfer = int(nominal_int * rate - biaya_total)
-                    st.markdown(
-                        f"<p style='font-size:1.35rem;'><strong>➤ Nominal Transfer:</strong> {format_rupiah(nominal_transfer)}</p>",
-                        unsafe_allow_html=True
-                    )
-                    st.markdown(
-                        f"<p style='font-size:1.35rem;'><strong>➤ Nominal Transaksi:</strong> {format_rupiah(nominal_int)}</p>",
-                        unsafe_allow_html=True
-                    )
-                else:  # Gesek Bersih
-                    fee = int(nominal_int / rate - nominal_int)
-                    nominal_transaksi = nominal_int + fee + biaya_total
-                    st.markdown(
-                        f"<p style='font-size:1.35rem;'><strong>➤ Nominal Transfer:</strong> {format_rupiah(nominal_int)}</p>",
-                        unsafe_allow_html=True
-                    )
-                    st.markdown(
-                        f"<p style='font-size:1.35rem;'><strong>➤ Nominal Transaksi:</strong> {format_rupiah(nominal_transaksi)}</p>",
-                        unsafe_allow_html=True
-                    )
+            if jenis == "Gesek Kotor":
+                if tipe_rate == "Persentase (%)":
+                    nominal_transfer = int(nominal_int * (1 - rate_decimal)) - biaya_total
+                else:
+                    nominal_transfer = nominal_int - nominal_rate - biaya_total
+                nominal_transaksi = nominal_int
 
-                st.markdown(
-                    f"<p style='font-size:1.35rem;'><strong>➤ Waktu Transaksi:</strong> {waktu_mulai.strftime('%H:%M')}</p>",
-                    unsafe_allow_html=True
-                )
-                st.markdown(
-                    f"<p style='font-size:1.35rem;'><strong>➤ Waktu Estimasi Transfer:</strong> {estimasi_selesai_transfer}</p>",
-                    unsafe_allow_html=True
-                )
-            else:
-                st.error("Masukkan nominal transaksi/transf sebesar lebih dari 0 terlebih dahulu.")
+            else:  # Gesek Bersih
+                if tipe_rate == "Persentase (%)":
+                    fee = int(nominal_int / (1 - rate_decimal) - nominal_int)
+                else:
+                    fee = nominal_rate
+                nominal_transaksi = nominal_int + fee + biaya_total
+                nominal_transfer = nominal_int
+
+            st.markdown(
+                f"<p style='font-size:1.35rem;'><strong>➤ Nominal Transfer:</strong> {format_rupiah(nominal_transfer)}</p>",
+                unsafe_allow_html=True
+            )
+            st.markdown(
+                f"<p style='font-size:1.35rem;'><strong>➤ Nominal Transaksi:</strong> {format_rupiah(nominal_transaksi)}</p>",
+                unsafe_allow_html=True
+            )
+            st.markdown(
+                f"<p style='font-size:1.35rem;'><strong>➤ Waktu Transaksi:</strong> {waktu_mulai.strftime('%H:%M')}</p>",
+                unsafe_allow_html=True
+            )
+            st.markdown(
+                f"<p style='font-size:1.35rem;'><strong>➤ Waktu Estimasi Transfer:</strong> {estimasi_selesai_transfer}</p>",
+                unsafe_allow_html=True
+            )
+
 
 # =============================================
 # MENU 2: INPUT DATA TRANSAKSI
