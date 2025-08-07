@@ -639,23 +639,15 @@ elif menu == "Proporsional Transaksi Besar":
 elif menu == "Jam":
     st.title("⏱️ Hitung Selisih Waktu Antar Jam")
 
-    # Inisialisasi default sekali saja
+    # Atur default sekali saja
     if "start_time" not in st.session_state:
         st.session_state.start_time = datetime.now(ZoneInfo("Asia/Jakarta")).time()
     if "end_time" not in st.session_state:
         st.session_state.end_time = datetime.now(ZoneInfo("Asia/Jakarta")).time()
 
-    # Gunakan key yang sama dengan session_state
-    start_time = st.time_input(
-        "Waktu Mulai",
-        value=st.session_state.start_time,
-        key="start_time"
-    )
-    end_time = st.time_input(
-        "Waktu Selesai",
-        value=st.session_state.end_time,
-        key="end_time"
-    )
+    # Panggil widget hanya dengan key, tanpa value
+    start_time = st.time_input("Waktu Mulai", key="start_time")
+    end_time   = st.time_input("Waktu Selesai", key="end_time")
 
     if st.button("Hitung Selisih"):
         today = datetime.now(ZoneInfo("Asia/Jakarta")).date()
@@ -665,8 +657,6 @@ elif menu == "Jam":
             t2 += timedelta(days=1)
 
         delta = t2 - t1
-        total_seconds = delta.seconds
-        hours, remainder = divmod(total_seconds, 3600)
-        minutes, seconds = divmod(remainder, 60)
-
-        st.success(f"Waktu yang berlalu: {hours} jam {minutes} menit {seconds} detik")
+        jam, sisa = divmod(delta.seconds, 3600)
+        menit, detik = divmod(sisa, 60)
+        st.success(f"Waktu yang berlalu: {jam} jam {menit} menit {detik} detik")
