@@ -465,8 +465,9 @@ elif menu == "Input Data Transaksi":
                 "Mesin EDC - BNI Showroom Gerlong Tonggoh",
                 "Mesin EDC - BRI Vilan Fashion",
                 "Mesin EDC - BCA Idaman Clothes",
+                "Mesin EDC - BCA AF Bekasi",
                 "Quick Bill - Zahra Fashion",
-                "Mesin EDC - BCA AF Bekasi"
+                "Quick Bill - Phonefoyer",
             ])
         with col10:
             lay = st.selectbox("Jenis Layanan Transfer", [
