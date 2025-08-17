@@ -613,7 +613,7 @@ elif menu == "Input Data Transaksi":
    {bullet} Jenis Gestun : {fmt_value(j_g)}
    {bullet} Metode Gestun : {fmt_value(metode)}
    {bullet} Media Pencairan : {fmt_value(media)}
-   {bullet} Jenis Layanan Transfer: {fmt_value(lay)}
+   {bullet} Layanan Transfer : {fmt_value(lay)}
    {bullet} Produk & Sub Produk : {fmt_value(prod)}
    {bullet} Rate Jual : {fmt_value(rt_str)}
 {sep}
