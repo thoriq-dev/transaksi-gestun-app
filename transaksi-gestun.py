@@ -427,15 +427,6 @@ if menu == "Hitung Nominal Transaksi":
 
         st.write("")  # spacer
 
-        # Kartu angka utama (Nominal Transfer, Nominal Transaksi, Biaya Tambahan)
-        st.markdown("<div class='card-grid'>", unsafe_allow_html=True)
-        st.markdown(f"<div class='card'><h4>Nominal Transfer</h4><p>{format_rupiah(nominal_transfer)}</p></div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='card'><h4>Nominal Transaksi</h4><p>{format_rupiah(nominal_transaksi)}</p></div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='card'><h4>Biaya Tambahan Total</h4><p>{format_rupiah(biaya_total)}</p></div>", unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
-
-        st.divider()
-
         # Dua kolom: kiri (breakdown), kanan (waktu)
         left, right = st.columns([1.6, 1])
         with left:
@@ -454,6 +445,17 @@ if menu == "Hitung Nominal Transaksi":
             st.markdown("<div class='section-title'>➤ Waktu</div>", unsafe_allow_html=True)
             st.write(f"• Waktu Transaksi: **{waktu_mulai.strftime('%H:%M')}**")
             st.write(f"• Estimasi Transfer: **{estimasi_selesai_transfer}**")
+
+        # Kartu angka utama (Nominal Transfer, Nominal Transaksi, Biaya Tambahan)
+        st.markdown("<div class='card-grid'>", unsafe_allow_html=True)
+        st.markdown(f"<div class='card'><h4>Biaya Tambahan Total</h4><p>{format_rupiah(biaya_total)}</p></div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='card'><h4>Nominal Transfer</h4><p>{format_rupiah(nominal_transfer)}</p></div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='card'><h4>Nominal Transaksi</h4><p>{format_rupiah(nominal_transaksi)}</p></div>", unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+
+        st.divider()
+
+        
 
 
 
