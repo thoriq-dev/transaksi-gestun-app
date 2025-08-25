@@ -450,9 +450,9 @@ if menu == "Hitung Nominal Transaksi":
         # Ringkasan input (jenis & rate) sebagai pill
         colA, colB, colC = st.columns([1,1,1])
         with colA:
-            st.markdown(f"<span class='pill'>Jenis: <b>{jenis}</b></span>", unsafe_allow_html=True)
-        with colB:
             st.markdown(f"<span class='pill'>Rate: <b>{rt_str}</b></span>", unsafe_allow_html=True)
+        with colB:
+            st.markdown(f"<span class='pill'>Jenis: <b>{jenis}</b></span>", unsafe_allow_html=True)
         with colC:
             # tampilkan label UI agar nampak harga di pilihan
             st.markdown(f"<span class='pill'>Layanan: <b>{layanan_transfer_ui}</b></span>", unsafe_allow_html=True)
