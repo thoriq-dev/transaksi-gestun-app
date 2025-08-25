@@ -20,9 +20,7 @@ st.markdown("""
       font-weight: 600 !important;
     }
 
-    h1, h2 {
-      font-weight: 700 !important;
-    }
+    h1, h2 { font-weight: 700 !important; }
 
     .stTextInput>div>div>input,
     .stNumberInput>div>div>input,
@@ -30,15 +28,12 @@ st.markdown("""
       font-family: 'Noto Sans JP', sans-serif !important;
       font-weight: 600 !important;
     }
-
-    
     .stSelectbox>div>div>div>div,
     .stRadio>label,
     .stMultiSelect>div>div {
       font-family: 'Noto Sans JP', sans-serif !important;
       font-weight: 600 !important;
     }
-            
     </style>
 """, unsafe_allow_html=True)
 
@@ -48,6 +43,40 @@ import streamlit.components.v1 as components
 import random
 from typing import List, Tuple, Dict
 import pandas as pd
+
+# ===== Dev Shield (GLOBAL): cegah fungsi tampil di UI saat debug OFF =====
+# Diletakkan di awal agar berlaku untuk seluruh file.
+if "debug_help" not in st.session_state:
+    st.session_state.debug_help = False
+
+if "_orig_st_help" not in st.session_state:
+    st.session_state._orig_st_help = st.help
+if "_orig_st_write" not in st.session_state:
+    st.session_state._orig_st_write = st.write
+
+def _noop(*args, **kwargs):
+    return
+
+def _safe_write(*args, **kwargs):
+    """Saring objek callable saat debug OFF agar 'function … No docs available' tidak muncul."""
+    if not st.session_state.get("debug_help", False):
+        args = [a for a in args if not callable(a)]
+        kwargs = {k: v for k, v in kwargs.items() if not callable(v)}
+        if not args and not kwargs:
+            return
+    return st.session_state._orig_st_write(*args, **kwargs)
+
+def apply_dev_shield():
+    if st.session_state.get("debug_help", False):
+        st.help = st.session_state._orig_st_help
+        st.write = st.session_state._orig_st_write
+    else:
+        st.help = _noop
+        st.write = _safe_write
+
+apply_dev_shield()
+# ===== End Dev Shield (GLOBAL) =====
+
 
 # --- Fungsi Pendukung ---
 def estimasi_durasi(layanan):
@@ -103,10 +132,8 @@ def rp(x: int) -> str:
     """Rupiah formatter: 1000000 -> 'Rp1,000,000'"""
     return f"Rp{x:,}"
 
-
 def _is_non_round(val: int) -> bool:
     return val % 1000 != 0
-
 
 def _rand_adjust(val: int, low: int = 237, high: int = 937) -> int:
     if _is_non_round(val):
@@ -116,10 +143,9 @@ def _rand_adjust(val: int, low: int = 237, high: int = 937) -> int:
 
 # Core algorithm: split_transaction_exact
 # ----------------------------------------------------------------------------------
-
 def split_transaction_exact(total: int, machines: List[Tuple[str, int]], max_swipes: int = 2) -> List[Dict]:
-    """Split *total* across *machines*, keeping NOMINAL < limit‑SAFETY_GAP,
-    non‑round, max *max_swipes* per machine, and guaranteeing exact total.
+    """Split *total* across *machines*, keeping NOMINAL < limit-SAFETY_GAP,
+    non-round, max *max_swipes* per machine, and guaranteeing exact total.
     Returns list of dict {'machine': str, 'amount': int}.
     """
     machines = sorted(machines, key=lambda x: -x[1])  # largest limit first
@@ -161,7 +187,7 @@ def split_transaction_exact(total: int, machines: List[Tuple[str, int]], max_swi
         if not progressed:
             raise RuntimeError("Unable to allocate remaining amount with given limits/swipes.")
 
-    # Exact‑total adjustment
+    # Exact-total adjustment
     current_total = sum(p["amount"] for p in parts)
     diff = total - current_total
 
@@ -238,12 +264,6 @@ def menu_pembagian_edc():
                 "📥 Download CSV", df.to_csv(index=False).encode(), "split_plan.csv", "text/csv"
             )
 
-# If you want to test this file standalone, uncomment below:
-# if __name__ == "__main__":
-#     import streamlit.runtime.scriptrunner.script_run_context as stc
-#     if stc.get_script_run_ctx():
-#         menu_pembagian_edc()
-
 menu = st.sidebar.selectbox("Pilih Menu", [
     "Hitung Nominal Transaksi",
     "Input Data Transaksi",
@@ -273,7 +293,6 @@ if menu == "Hitung Nominal Transaksi":
         preset = st.selectbox("Pilih Persentase:", preset_opts, key="menu1_preset")
 
         if preset != "Custom":
-            # parse dari string preset
             rt_percent = float(preset.replace("%", ""))
         else:
             rt_percent = st.number_input(
@@ -285,8 +304,13 @@ if menu == "Hitung Nominal Transaksi":
                 key="menu1_rt_percent"
             )
 
+        # Guard agar tidak 100% (menghindari divisi nol di Gesek Bersih)
+        if rt_percent >= 100.0:
+            st.error("Rate tidak boleh 100% atau lebih.")
+            st.stop()
+
+        rate_decimal = rt_percent / 100.0
         nominal_rate = 0
-        rate_decimal = rt_percent / 100
         rt_str = f"{rt_percent:.2f}%"
 
     # Jika nominal tetap
@@ -299,66 +323,70 @@ if menu == "Hitung Nominal Transaksi":
             key="menu1_rt_nominal"
         )
         rate_decimal = None
-        # Untuk konsistensi tampilan dengan titik pemisah ribuan
         rt_str = f"Rp {nominal_rate:,}".replace(",", ".")
 
-    # Pilihan Biaya Tambahan & Layanan Transfer
-    biaya_opsi = {
-        "Biaya administrasi nasabah baru ": 10000,
-        "Biaya layanan super kilat ": 18000,
-        "Biaya layanan kilat ": 15000,
-        "Biaya transfer beda bank ": 10000,
-        "Tidak ada tambahan biaya layanan": 0
+    # ---------------- Konfigurasi biaya tambahan & layanan transfer ----------------
+    # Biaya lain (bukan layanan)
+    BIAYA_TAMBAHAN = {
+        "Biaya administrasi nasabah baru": 10_000,
+        "Biaya transfer beda bank": 10_000,
     }
 
-    layanan_transfer = st.selectbox(
+    # Layanan transfer dengan label UI berisi harga + tipe dinormalisasi untuk estimasi durasi
+    SVCS = [
+        {
+            "label_ui": "Normal",
+            "label_biaya": "Layanan normal",
+            "cost": 0,
+            "normalized": "Normal",
+        },
+        {
+            "label_ui": f"Kilat Member | Non Member — {fmt_rp(15_000)}",
+            "label_biaya": "Biaya layanan kilat",
+            "cost": 15_000,
+            "normalized": "Kilat",
+        },
+        {
+            "label_ui": f"Super Kilat Member — {fmt_rp(15_000)}",
+            "label_biaya": "Biaya layanan super kilat (member)",
+            "cost": 15_000,
+            "normalized": "Super Kilat",
+        },
+        {
+            "label_ui": f"Super Kilat Non Member — {fmt_rp(18_000)}",
+            "label_biaya": "Biaya layanan super kilat (non member)",
+            "cost": 18_000,
+            "normalized": "Super Kilat",
+        },
+    ]
+    # Map label → svc
+    SVC_BY_LABEL = {s["label_ui"]: s for s in SVCS}
+
+    layanan_transfer_ui = st.selectbox(
         "Pilih Layanan Transfer:",
-        ["Normal", "Kilat", "Super Kilat"],
+        [s["label_ui"] for s in SVCS],
         key="menu1_layanan_transfer"
     )
+    svc = SVC_BY_LABEL[layanan_transfer_ui]
 
-    # Filter multiselect agar tidak menampilkan item kilat/super kilat & 'tidak ada'
-    biaya_tambahan_opsi = [
-        k for k in biaya_opsi
-        if "layanan kilat" not in k.lower()
-        and "super kilat" not in k.lower()
-        and "tidak ada" not in k.lower()
-    ]
-
+    # Biaya tambahan lain (non-layanan)
     biaya_pilihan = st.multiselect(
         "Pilih Biaya Tambahan Lainnya:",
-        biaya_tambahan_opsi,
+        list(BIAYA_TAMBAHAN.keys()),
         key="menu1_biaya_pilihan"
     )
 
-    # Hitung biaya tambahan total
-    biaya_total = sum(biaya_opsi[b] for b in biaya_pilihan)
-    if layanan_transfer == "Kilat":
-        biaya_total += biaya_opsi["Biaya layanan kilat "]
-    elif layanan_transfer == "Super Kilat":
-        biaya_total += biaya_opsi["Biaya layanan super kilat "]
-
+    # Hitung biaya tambahan total (biaya lain + biaya layanan)
+    biaya_total = sum(BIAYA_TAMBAHAN[b] for b in biaya_pilihan) + svc["cost"]
     st.write(f"▶️ Total Biaya Tambahan: {format_rupiah(biaya_total)}")
 
     # -------- Ringkasan biaya tambahan (breakdown) --------
-    # Siapkan data juga dalam bentuk list of dict agar mudah dibuat tabel
-    ringkasan_biaya_tambahan = []
-    breakdown_rows = []
-    for b in biaya_pilihan:
-        ringkasan_biaya_tambahan.append(f"• {b} — {format_rupiah(biaya_opsi[b])}")
-        breakdown_rows.append({"Komponen": b, "Nominal": format_rupiah(biaya_opsi[b])})
-
-    if layanan_transfer == "Kilat":
-        label = "Biaya layanan kilat"
-        nominal = biaya_opsi["Biaya layanan kilat "]
-        ringkasan_biaya_tambahan.append(f"• {label} — {format_rupiah(nominal)}")
-        breakdown_rows.append({"Komponen": label, "Nominal": format_rupiah(nominal)})
-
-    elif layanan_transfer == "Super Kilat":
-        label = "Biaya layanan super kilat"
-        nominal = biaya_opsi["Biaya layanan super kilat "]
-        ringkasan_biaya_tambahan.append(f"• {label} — {format_rupiah(nominal)}")
-        breakdown_rows.append({"Komponen": label, "Nominal": format_rupiah(nominal)})
+    breakdown_rows = [
+        {"Komponen": b, "Nominal": format_rupiah(BIAYA_TAMBAHAN[b])}
+        for b in biaya_pilihan
+    ]
+    if svc["cost"] > 0:
+        breakdown_rows.append({"Komponen": svc["label_biaya"], "Nominal": format_rupiah(svc["cost"])})
     # ------------------------------------------------------
 
     # Callback format rupiah untuk text_input
@@ -396,18 +424,21 @@ if menu == "Hitung Nominal Transaksi":
     # Hitung & tampilkan hasil
     if st.button("Hitung Sekarang", disabled=(nominal_int <= 0)):
         waktu_mulai = datetime.now(ZoneInfo("Asia/Jakarta"))
-        estimasi_selesai_transfer = estimasi_selesai(waktu_mulai, estimasi_durasi(layanan_transfer))
+        # gunakan tipe layanan yang dinormalisasi untuk estimasi durasi
+        estimasi_selesai_transfer = estimasi_selesai(waktu_mulai, estimasi_durasi(svc["normalized"]))
 
-        # Perhitungan nominal
+        # Perhitungan nominal (pakai round lalu int)
         if jenis == "Gesek Kotor":
             if tipe_rate == "Persentase (%)":
-                nominal_transfer = int(nominal_int * (1 - rate_decimal)) - biaya_total
+                nominal_transfer = int(round(nominal_int * (1 - rate_decimal))) - biaya_total
             else:
                 nominal_transfer = nominal_int - nominal_rate - biaya_total
+            nominal_transfer = max(0, nominal_transfer)  # cegah negatif
             nominal_transaksi = nominal_int
+
         else:  # Gesek Bersih
             if tipe_rate == "Persentase (%)":
-                fee = int(nominal_int / (1 - rate_decimal) - nominal_int)
+                fee = int(round(nominal_int / (1 - rate_decimal) - nominal_int))
             else:
                 fee = nominal_rate
             nominal_transaksi = nominal_int + fee + biaya_total
@@ -423,7 +454,8 @@ if menu == "Hitung Nominal Transaksi":
         with colB:
             st.markdown(f"<span class='pill'>Rate: <b>{rt_str}</b></span>", unsafe_allow_html=True)
         with colC:
-            st.markdown(f"<span class='pill'>Layanan: <b>{layanan_transfer}</b></span>", unsafe_allow_html=True)
+            # tampilkan label UI agar nampak harga di pilihan
+            st.markdown(f"<span class='pill'>Layanan: <b>{layanan_transfer_ui}</b></span>", unsafe_allow_html=True)
 
         st.write("")  # spacer
 
@@ -432,11 +464,7 @@ if menu == "Hitung Nominal Transaksi":
         with left:
             st.markdown("<div class='section-title'>➤ Rincian Biaya Tambahan</div>", unsafe_allow_html=True)
             if breakdown_rows:
-                # Tabel rapi (simple)
-                import pandas as pd
-                df_biaya = pd.DataFrame(breakdown_rows)
-                # Pastikan urutan kolom
-                df_biaya = df_biaya[["Komponen", "Nominal"]]
+                df_biaya = pd.DataFrame(breakdown_rows)[["Komponen", "Nominal"]]
                 st.table(df_biaya)
             else:
                 st.caption("Tidak ada biaya tambahan yang dipilih.")
@@ -455,6 +483,9 @@ if menu == "Hitung Nominal Transaksi":
 
         st.divider()
 
+
+
+
         
 
 
@@ -467,13 +498,40 @@ if menu == "Hitung Nominal Transaksi":
 elif menu == "Input Data Transaksi":
     st.title("Form Input Data Transaksi")
 
-    # Semua opsi biaya tambahan (tidak ditampilkan ke user)
+    # Biaya lain (non-layanan) — tetap tersembunyi dari user
     biaya_opsi = {
-        "Biaya administrasi nasabah baru (Rp10.000)": 10000,
-        "Biaya layanan super kilat (Rp18.000)": 18000,
-        "Biaya layanan kilat (Rp15.000)": 15000,
-        "Biaya transfer beda bank (Rp10.000)": 10000,
+        "Biaya administrasi nasabah baru (Rp10.000)": 10_000,
+        "Biaya transfer beda bank (Rp10.000)": 10_000,
     }
+
+    # Konfigurasi layanan transfer baru (label UI + biaya + penanda untuk keterangan)
+    SVCS = [
+        {
+            "label_ui": "Normal 2 Jam - 2 Jam 30 Menit",
+            "label_ket": "Layanan Transfer Normal",
+            "cost": 0,
+            "normalized": "Normal",
+        },
+        {
+            "label_ui": "Kilat Member | Non Member — Rp. 15.000",
+            "label_ket": "Biaya Layanan Transfer Kilat",
+            "cost": 15_000,
+            "normalized": "Kilat",
+        },
+        {
+            "label_ui": "Super Kilat Member — Rp. 15.000",
+            "label_ket": "Biaya Layanan Transfer Super Kilat (Member)",
+            "cost": 15_000,
+            "normalized": "Super Kilat",
+        },
+        {
+            "label_ui": "Super Kilat Non Member — Rp. 18.000",
+            "label_ket": "Biaya Layanan Transfer Super Kilat (Non Member)",
+            "cost": 18_000,
+            "normalized": "Super Kilat",
+        },
+    ]
+    SVC_BY_LABEL = {s["label_ui"]: s for s in SVCS}
 
     with st.form(key="form3"):
         st.subheader("🧾 Data Nasabah & Transaksi")
@@ -520,11 +578,11 @@ elif menu == "Input Data Transaksi":
                 "Quick Bill - Phonefoyer",
             ])
         with col10:
-            lay = st.selectbox("Jenis Layanan Transfer", [
-                "Normal 2 Jam - 2 Jam 30 Menit",
-                "Kilat 30 Menit - 40 Menit",
-                "Super Kilat 10 Menit - 20 Menit"
-            ])
+            lay = st.selectbox(
+                "Jenis Layanan Transfer",
+                [s["label_ui"] for s in SVCS]
+            )
+            svc = SVC_BY_LABEL[lay]  # objek layanan terpilih
 
         # === Pilih Tipe Rate Jual & Input Rate ===
         rt_type = st.radio(
@@ -570,19 +628,19 @@ elif menu == "Input Data Transaksi":
         else:
             rt_str = f"Rp {nominal_rate:,}"
 
-        # Hitung biaya layanan otomatis
+        # === Hitung biaya layanan otomatis (berdasarkan pilihan layanan + kondisi lain) ===
         biaya_otomatis = 0
-        if lay == "Kilat 30 Menit - 40 Menit":
-            biaya_otomatis += biaya_opsi["Biaya layanan kilat (Rp15.000)"]
-        elif lay == "Super Kilat 10 Menit - 20 Menit":
-            biaya_otomatis += biaya_opsi["Biaya layanan super kilat (Rp18.000)"]
+        # biaya dari layanan terpilih (0 / 15.000 / 18.000)
+        biaya_otomatis += svc["cost"]
+
+        # tambahan sesuai kondisi nasabah/bank
         if jenis == "Baru":
             biaya_otomatis += biaya_opsi["Biaya administrasi nasabah baru (Rp10.000)"]
         if bank != "BCA":
             biaya_otomatis += biaya_opsi["Biaya transfer beda bank (Rp10.000)"]
         bl = biaya_otomatis
 
-        # HITUNG JUMLAH TRANSAKSI & TRANSFER setelah semua input tersedia
+        # === HITUNG JUMLAH TRANSAKSI & TRANSFER ===
         jt, trf = 0, 0
         if j_g == "Kotor":
             jt = st.number_input(
@@ -616,7 +674,7 @@ elif menu == "Input Data Transaksi":
             jt_str = format_rupiah(jt)
             st.text_input("Jumlah Transaksi (Rp)", value=jt_str, disabled=True)
 
-        # BIAYA LAYANAN
+        # BIAYA LAYANAN (ditampilkan, tidak bisa diubah)
         st.number_input(
             "Biaya Layanan (Rp)",
             value=bl,
@@ -631,10 +689,8 @@ elif menu == "Input Data Transaksi":
             lines.append("Biaya Layanan Administrasi Nasabah Baru")
         if bank != "BCA":
             lines.append("Biaya Layanan Transfer diluar Bank BCA")
-        if lay == "Kilat 30 Menit - 40 Menit":
-            lines.append("Biaya Layanan Transfer Kilat")
-        elif lay == "Super Kilat 10 Menit - 20 Menit":
-            lines.append("Biaya Layanan Transfer Super Kilat")
+        if svc["cost"] > 0:
+            lines.append(svc["label_ket"])
         default_ket = " & ".join(lines) if lines else "-"
         ket = st.text_area("Keterangan Layanan", value=default_ket, height=80)
 
@@ -675,6 +731,7 @@ elif menu == "Input Data Transaksi":
 {bullet} {fmt_heading(f"Jumlah Transfer {trf_fmt}")}
 """
         st.code(teks_output, language="text")
+
 
 
 # =============================================
