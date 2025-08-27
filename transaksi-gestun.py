@@ -44,35 +44,34 @@ import random
 from typing import List, Tuple, Dict
 import pandas as pd
 
-# ===== Dev Shield (GLOBAL): cegah fungsi tampil di UI saat debug OFF =====
-# Diletakkan di awal agar berlaku untuk seluruh file.
 if "debug_help" not in st.session_state:
     st.session_state.debug_help = False
 
-if "_orig_st_help" not in st.session_state:
-    st.session_state._orig_st_help = st.help
-if "_orig_st_write" not in st.session_state:
-    st.session_state._orig_st_write = st.write
+# Simpan original SEKALI di level modul (bukan session_state)
+_ORIG_ST_WRITE = st.write
+_ORIG_ST_HELP  = st.help
 
 def _noop(*args, **kwargs):
     return
 
 def _safe_write(*args, **kwargs):
-    """Saring objek callable saat debug OFF agar 'function … No docs available' tidak muncul."""
+    # Saring callable saat debug OFF agar kotak "function … No docs available" tidak muncul
     if not st.session_state.get("debug_help", False):
         args = [a for a in args if not callable(a)]
         kwargs = {k: v for k, v in kwargs.items() if not callable(v)}
         if not args and not kwargs:
             return
-    return st.session_state._orig_st_write(*args, **kwargs)
+    return _ORIG_ST_WRITE(*args, **kwargs)
 
 def apply_dev_shield():
     if st.session_state.get("debug_help", False):
-        st.help = st.session_state._orig_st_help
-        st.write = st.session_state._orig_st_write
+        # Debug ON → pulihkan API asli
+        st.write = _ORIG_ST_WRITE
+        st.help  = _ORIG_ST_HELP
     else:
-        st.help = _noop
+        # Debug OFF → aktifkan filter
         st.write = _safe_write
+        st.help  = _noop
 
 apply_dev_shield()
 # ===== End Dev Shield (GLOBAL) =====
