@@ -84,7 +84,7 @@ def estimasi_durasi(layanan):
     elif layanan == "Kilat":
         return timedelta(minutes=40)
     else:
-        return timedelta(hours=2, minutes=30)
+        return timedelta(hours=3, minutes=0)
 
 def estimasi_selesai(waktu_mulai, durasi):
     waktu_selesai = waktu_mulai + durasi
@@ -504,32 +504,12 @@ elif menu == "Input Data Transaksi":
         "Biaya transfer beda bank (Rp10.000)": 10_000,
     }
 
-    # Konfigurasi layanan transfer baru (label UI + biaya + penanda untuk keterangan)
+    # Konfigurasi layanan transfer baru
     SVCS = [
-        {
-            "label_ui": "Normal 2 Jam - 2 Jam 30 Menit",
-            "label_ket": "Layanan Transfer Normal",
-            "cost": 0,
-            "normalized": "Normal",
-        },
-        {
-            "label_ui": "Kilat Member | Non Member — Rp. 15.000",
-            "label_ket": "Biaya Layanan Transfer Kilat",
-            "cost": 15_000,
-            "normalized": "Kilat",
-        },
-        {
-            "label_ui": "Super Kilat Member — Rp. 15.000",
-            "label_ket": "Biaya Layanan Transfer Super Kilat (Member)",
-            "cost": 15_000,
-            "normalized": "Super Kilat",
-        },
-        {
-            "label_ui": "Super Kilat Non Member — Rp. 18.000",
-            "label_ket": "Biaya Layanan Transfer Super Kilat (Non Member)",
-            "cost": 18_000,
-            "normalized": "Super Kilat",
-        },
+        {"label_ui": "Normal 2 Jam - 2 Jam 30 Menit", "label_ket": "Layanan Transfer Normal", "cost": 0, "normalized": "Normal"},
+        {"label_ui": "Kilat Member | Non Member — Rp. 15.000", "label_ket": "Biaya Layanan Transfer Kilat", "cost": 15_000, "normalized": "Kilat"},
+        {"label_ui": "Super Kilat Member — Rp. 15.000", "label_ket": "Biaya Layanan Transfer Super Kilat (Member)", "cost": 15_000, "normalized": "Super Kilat"},
+        {"label_ui": "Super Kilat Non Member — Rp. 18.000", "label_ket": "Biaya Layanan Transfer Super Kilat (Non Member)", "cost": 18_000, "normalized": "Super Kilat"},
     ]
     SVC_BY_LABEL = {s["label_ui"]: s for s in SVCS}
 
@@ -548,9 +528,7 @@ elif menu == "Input Data Transaksi":
         with col3:
             jenis = st.selectbox("Jenis Nasabah", ["Langganan", "Baru"])
         with col4:
-            kelas = st.selectbox("Kelas Nasabah", [
-                "Non Member", "Member Gold", "Member Platinum", "Member Anggota Koperasi"
-            ])
+            kelas = st.selectbox("Kelas Nasabah", ["Non Member", "Member Gold", "Member Platinum", "Member Anggota Koperasi"])
 
         # === Bank & Jenis Gestun ===
         col5, col6 = st.columns(2)
@@ -571,6 +549,7 @@ elif menu == "Input Data Transaksi":
         with col9:
             media = st.selectbox("Media Pencairan", [
                 "Mesin EDC - BNI Showroom Gerlong Tonggoh",
+                "Mesin EDC - BRI Abadi Cell Sersan",
                 "Mesin EDC - BRI Vilan Fashion",
                 "Mesin EDC - BCA Idaman Clothes",
                 "Mesin EDC - BCA AF Bekasi",
@@ -578,110 +557,96 @@ elif menu == "Input Data Transaksi":
                 "Quick Bill - Phonefoyer",
             ])
         with col10:
-            lay = st.selectbox(
-                "Jenis Layanan Transfer",
-                [s["label_ui"] for s in SVCS]
-            )
-            svc = SVC_BY_LABEL[lay]  # objek layanan terpilih
+            lay = st.selectbox("Jenis Layanan Transfer", [s["label_ui"] for s in SVCS])
+            svc = SVC_BY_LABEL[lay]
 
-        # === Pilih Tipe Rate Jual & Input Rate ===
-        rt_type = st.radio(
-            "Tipe Rate Jual",
-            ["Persentase (%)", "Nominal (Rp)"],
-            index=0,
-            horizontal=True
-        )
-        # Ambil nilai rate sesuai tipe, baru hitung rate_decimal
+        # === Rate Jual ===
+        rt_type = st.radio("Tipe Rate Jual", ["Persentase (%)", "Nominal (Rp)"], index=0, horizontal=True)
         if rt_type == "Persentase (%)":
-            rt_percent = st.number_input(
-                "Rate Jual (%)",
-                min_value=0.0,
-                max_value=100.0,
-                step=0.1,
-                format="%.2f",
-                key="rt_percent"
-            )
+            rt_percent = st.number_input("Rate Jual (%)", min_value=0.0, max_value=100.0, step=0.1, format="%.2f", key="rt_percent")
             nominal_rate = 0
             rate_decimal = rt_percent / 100
-        else:
-            nominal_rate = st.number_input(
-                "Rate Jual (Rp)",
-                min_value=0,
-                step=1000,
-                format="%d",
-                key="rt_nominal"
-            )
-            rt_percent = 0.0
-            rate_decimal = 0
-
-        # Helper text untuk rate
-        col11, col12 = st.columns(2)
-        with col12:
-            if rt_type == "Persentase (%)":
-                st.write("Masukkan persen, contoh: 2.50")
-            else:
-                st.write("Masukkan nominal, contoh: 10000")
-
-        # Parse string rate untuk ditampilkan
-        if rt_type == "Persentase (%)":
             rt_str = f"{rt_percent:.2f}%"
         else:
+            nominal_rate = st.number_input("Rate Jual (Rp)", min_value=0, step=1000, format="%d", key="rt_nominal")
+            rt_percent = 0.0
+            rate_decimal = 0
             rt_str = f"Rp {nominal_rate:,}"
 
-        # === Hitung biaya layanan otomatis (berdasarkan pilihan layanan + kondisi lain) ===
-        biaya_otomatis = 0
-        # biaya dari layanan terpilih (0 / 15.000 / 18.000)
-        biaya_otomatis += svc["cost"]
+        # === Rate MDR ===
+        mdr_type = st.radio("Tipe Rate MDR", ["Persentase (%)", "Nominal (Rp)"], index=0, horizontal=True)
+        if mdr_type == "Persentase (%)":
+            mdr_percent = st.number_input("Rate MDR (%)", min_value=0.0, max_value=100.0, step=0.1, format="%.2f", key="mdr_percent")
+            nominal_mdr = 0
+            mdr_decimal = mdr_percent / 100
+            mdr_str = f"{mdr_percent:.2f}%"
+        else:
+            nominal_mdr = st.number_input("Rate MDR (Rp)", min_value=0, step=1000, format="%d", key="mdr_nominal")
+            mdr_percent = 0.0
+            mdr_decimal = 0
+            mdr_str = f"Rp {nominal_mdr:,}"
 
-        # tambahan sesuai kondisi nasabah/bank
+        # === Hitung Rate Untung (Rate Jual - Rate MDR) ===
+        if rt_type == "Persentase (%)" and mdr_type == "Persentase (%)":
+            ru_percent = rt_percent - mdr_percent
+            ru_str = f"{ru_percent:.2f}%"
+        elif rt_type == "Nominal (Rp)" and mdr_type == "Nominal (Rp)":
+            ru_nominal = nominal_rate - nominal_mdr
+            ru_str = f"Rp {ru_nominal:,}"
+        else:
+            ru_str = f"{rt_str} - {mdr_str}"  # kalau beda tipe
+
+        # === Hitung biaya layanan otomatis ===
+        biaya_otomatis = svc["cost"]
         if jenis == "Baru":
             biaya_otomatis += biaya_opsi["Biaya administrasi nasabah baru (Rp10.000)"]
         if bank != "BCA":
             biaya_otomatis += biaya_opsi["Biaya transfer beda bank (Rp10.000)"]
         bl = biaya_otomatis
 
-        # === HITUNG JUMLAH TRANSAKSI & TRANSFER ===
+        # === Input tambahan (Dropdown + Custom Input) ===
+        st.markdown("### 🔧 Biaya Tambahan & Hadiah")
+
+        # Biaya EDC
+        edc_option = st.selectbox("Biaya Transaksi di Mesin EDC", ["Pilih / Isi Manual", "2.000", "5.000", "10.000"])
+        if edc_option == "Pilih / Isi Manual":
+            biaya_edc = st.number_input("Isi Biaya EDC (Rp)", min_value=0, step=500)
+        else:
+            biaya_edc = int(edc_option.replace(".", ""))
+
+        # Biaya QRIS
+        qris_option = st.selectbox("Biaya QRIS By WhatsApp", ["Pilih / Isi Manual", "3.000", "5.000", "7.500"])
+        if qris_option == "Pilih / Isi Manual":
+            biaya_qris = st.number_input("Isi Biaya QRIS (Rp)", min_value=0, step=500)
+        else:
+            biaya_qris = int(qris_option.replace(".", ""))
+
+        # Hadiah
+        hadiah_option = st.selectbox("Hadiah yang Didapatkan", ["Pilih / Isi Manual", "Voucher QRIS", "Voucher Blibli", "Voucher Tokopedia"])
+        if hadiah_option == "Pilih / Isi Manual":
+            hadiah = st.text_input("Isi Hadiah (misal: Cashback 20k)")
+        else:
+            hadiah = hadiah_option
+
+        # === Hitung Jumlah Transaksi & Transfer ===
         jt, trf = 0, 0
         if j_g == "Kotor":
-            jt = st.number_input(
-                "Jumlah Transaksi (Rp)",
-                min_value=0,
-                step=200000,
-                format="%d",
-                key="jt_input"
-            )
-            # Hitung potongan sesuai tipe rate
+            jt = st.number_input("Jumlah Transaksi (Rp)", min_value=0, step=200000, format="%d", key="jt_input")
             if rt_type == "Persentase (%)":
                 potongan = int(jt * rate_decimal)
             else:
                 potongan = nominal_rate
             trf = jt - potongan - bl
-            trf_str = format_rupiah(trf)
-            st.text_input("Jumlah Transfer (Rp)", value=trf_str, disabled=True)
+            st.text_input("Jumlah Transfer (Rp)", value=format_rupiah(trf), disabled=True)
         else:
-            trf = st.number_input(
-                "Jumlah Transfer (Rp)",
-                min_value=0,
-                step=200000,
-                format="%d",
-                key="trf_input"
-            )
-            # Hitung jumlah transaksi sesuai tipe rate
+            trf = st.number_input("Jumlah Transfer (Rp)", min_value=0, step=200000, format="%d", key="trf_input")
             if rt_type == "Persentase (%)":
                 jt = int((trf / (1 - rate_decimal)) + bl) if rate_decimal < 1 else 0
             else:
                 jt = trf + nominal_rate + bl
-            jt_str = format_rupiah(jt)
-            st.text_input("Jumlah Transaksi (Rp)", value=jt_str, disabled=True)
+            st.text_input("Jumlah Transaksi (Rp)", value=format_rupiah(jt), disabled=True)
 
-        # BIAYA LAYANAN (ditampilkan, tidak bisa diubah)
-        st.number_input(
-            "Biaya Layanan (Rp)",
-            value=bl,
-            format="%d",
-            disabled=True,
-            help="Biaya layanan dihitung otomatis"
-        )
+        st.number_input("Biaya Layanan (Rp)", value=bl, format="%d", disabled=True)
 
         # Keterangan otomatis
         lines = []
@@ -701,6 +666,8 @@ elif menu == "Input Data Transaksi":
         jt_fmt = format_rupiah(jt)
         trf_fmt = format_rupiah(trf)
         bl_fmt = format_rupiah(bl)
+        edc_fmt = format_rupiah(biaya_edc)
+        qris_fmt = format_rupiah(biaya_qris)
 
         def fmt_heading(txt): return f"*{txt}*"
         def fmt_value(txt): return f"_{txt}_" if jenis == "Langganan" else f"*{txt}*"
@@ -708,29 +675,28 @@ elif menu == "Input Data Transaksi":
         sep = "_______________________________"
 
         teks_output = f"""
-{bullet} {fmt_heading(f"TRANSAKSI NO. {transaksi_no}")}
-{sep}
-{bullet} {fmt_heading('DATA NASABAH')}
-   {bullet} Nama Nasabah : {fmt_value(nama)}
-   {bullet} Jenis Nasabah : {fmt_value(jenis)}
-   {bullet} Kelas Nasabah : {fmt_value(kelas)}
-{sep}
-{bullet} {fmt_heading('DATA TRANSAKSI')}
-   {bullet} Jenis Gestun : {fmt_value(j_g)}
-   {bullet} Metode Gestun : {fmt_value(metode)}
-   {bullet} Media Pencairan : {fmt_value(media)}
-   {bullet} Layanan Transfer : {fmt_value(lay)}
-   {bullet} Produk & Sub Produk : {fmt_value(prod)}
-   {bullet} Rate Jual : {fmt_value(rt_str)}
-{sep}
-{bullet} {fmt_heading('RANGKUMAN BIAYA DAN TRANSAKSI')}
-   {bullet} Jumlah Transaksi : {fmt_value(jt_fmt)}
-   {bullet} Biaya Layanan : {fmt_value(bl_fmt)}
-   {bullet} Keterangan Layanan : {fmt_value(ket)}
-{sep}
-{bullet} {fmt_heading(f"Jumlah Transfer {trf_fmt}")}
+{bullet} {fmt_heading(f"TRANSAKSI NO. {transaksi_no}")}  
+{sep}  
+{bullet} {fmt_heading('DATA NASABAH')}  
+   {bullet} Nama Nasabah : {fmt_value(nama)}  
+   {bullet} Jenis Nasabah : {fmt_value(jenis)} | {fmt_value(kelas)}  
+{sep}  
+   {bullet} Jenis Media Pencairan : {fmt_value(media)}  
+   {bullet} Produk : {fmt_value(prod)}  
+   {bullet} Rate Jual : {fmt_value(rt_str)}  
+   {bullet} Rate Untung : {fmt_value(ru_str)}  
+   {bullet} Layanan Transfer : {fmt_value(lay)}  
+   {bullet} Nominal Transaksi : {fmt_value(jt_fmt)}  
+   {bullet} Biaya Layanan Transfer: {fmt_value(bl_fmt)}  
+   {bullet} Biaya Transaksi di Mesin EDC : {fmt_value(edc_fmt)}  
+   {bullet} Biaya QRIS By Whatsapp : {fmt_value(qris_fmt)}  
+   {bullet} Hadiah yang didapatkan : {fmt_value(hadiah)}  
+{sep}  
+{bullet} {fmt_heading(f"Jumlah Transfer {trf_fmt}")}  
 """
         st.code(teks_output, language="text")
+
+
 
 
 
