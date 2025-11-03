@@ -444,9 +444,19 @@ if menu == "Hitung Nominal Transaksi":
             nominal_transaksi = nominal_int + fee + biaya_total
             nominal_transfer = nominal_int
 
+        # Hitung nilai fee dalam rupiah (jika tipe rate persentase)
+        if tipe_rate == "Persentase (%)":
+            fee_rupiah = int(round(nominal_int * rate_decimal))
+        else:
+            fee_rupiah = nominal_rate
+
+        # Buat teks penjelasan fee untuk ditampilkan di hasil
+        fee_info = f"Fee {rt_str} dari {format_rupiah(nominal_int)} adalah {format_rupiah(fee_rupiah)}"
+
         # Header hasil
         st.markdown("<h2 style='text-align:center;'>📊 Hasil Perhitungan</h2>", unsafe_allow_html=True)
-
+        st.caption(f"💡 {fee_info}")
+        
         # Ringkasan input (jenis & rate) sebagai pill
         colA, colB, colC = st.columns([1,1,1])
         with colA:
