@@ -422,76 +422,103 @@ if menu == "Hitung Nominal Transaksi":
     # =====================================
 
     # Hitung & tampilkan hasil
-    if st.button("Hitung Sekarang", disabled=(nominal_int <= 0)):
-        waktu_mulai = datetime.now(ZoneInfo("Asia/Jakarta"))
-        # gunakan tipe layanan yang dinormalisasi untuk estimasi durasi
-        estimasi_selesai_transfer = estimasi_selesai(waktu_mulai, estimasi_durasi(svc["normalized"]))
+if st.button("Hitung Sekarang", disabled=(nominal_int <= 0)):
+    waktu_mulai = datetime.now(ZoneInfo("Asia/Jakarta"))
+    # gunakan tipe layanan yang dinormalisasi untuk estimasi durasi
+    estimasi_selesai_transfer = estimasi_selesai(waktu_mulai, estimasi_durasi(svc["normalized"]))
 
-        # Perhitungan nominal (pakai round lalu int)
-        if jenis == "Gesek Kotor":
-            if tipe_rate == "Persentase (%)":
-                nominal_transfer = int(round(nominal_int * (1 - rate_decimal))) - biaya_total
-            else:
-                nominal_transfer = nominal_int - nominal_rate - biaya_total
-            nominal_transfer = max(0, nominal_transfer)  # cegah negatif
-            nominal_transaksi = nominal_int
-
-        else:  # Gesek Bersih
-            if tipe_rate == "Persentase (%)":
-                fee = int(round(nominal_int / (1 - rate_decimal) - nominal_int))
-            else:
-                fee = nominal_rate
-            nominal_transaksi = nominal_int + fee + biaya_total
-            nominal_transfer = nominal_int
-
-        # Hitung nilai fee dalam rupiah (jika tipe rate persentase)
+    # Perhitungan nominal (pakai round lalu int)
+    if jenis == "Gesek Kotor":
         if tipe_rate == "Persentase (%)":
             fee_rupiah = int(round(nominal_int * rate_decimal))
+            nominal_transfer = int(round(nominal_int * (1 - rate_decimal))) - biaya_total
         else:
             fee_rupiah = nominal_rate
+            nominal_transfer = nominal_int - nominal_rate - biaya_total
+        nominal_transfer = max(0, nominal_transfer)
+        nominal_transaksi = nominal_int
 
-        # Buat teks penjelasan fee untuk ditampilkan di hasil
-        fee_info = f"Fee {rt_str} dari {format_rupiah(nominal_int)} adalah {format_rupiah(fee_rupiah)}"
+    else:  # Gesek Bersih
+        if tipe_rate == "Persentase (%)":
+            fee_rupiah = int(round(nominal_int / (1 - rate_decimal) - nominal_int))
+            fee = fee_rupiah
+        else:
+            fee_rupiah = nominal_rate
+            fee = nominal_rate
+        nominal_transaksi = nominal_int + fee + biaya_total
+        nominal_transfer = nominal_int
 
-        # Header hasil
-        st.markdown("<h2 style='text-align:center;'>📊 Hasil Perhitungan</h2>", unsafe_allow_html=True)
-        st.caption(f"💡 {fee_info}")
-        
-        # Ringkasan input (jenis & rate) sebagai pill
-        colA, colB, colC = st.columns([1,1,1])
-        with colA:
-            st.markdown(f"<span class='pill'>Rate: <b>{rt_str}</b></span>", unsafe_allow_html=True)
-        with colB:
-            st.markdown(f"<span class='pill'>Jenis: <b>{jenis}</b></span>", unsafe_allow_html=True)
-        with colC:
-            # tampilkan label UI agar nampak harga di pilihan
-            st.markdown(f"<span class='pill'>Layanan: <b>{layanan_transfer_ui}</b></span>", unsafe_allow_html=True)
+    # ==============================
+    # Hitung nilai fee dalam Rupiah & teks penjelasan
+    # ==============================
+    if tipe_rate == "Persentase (%)":
+        if jenis == "Gesek Kotor":
+            # Gesek Kotor: fee dihitung langsung dari nominal transaksi
+            fee_rupiah = int(round(nominal_int * rate_decimal))
+            fee_info = (
+                f"💡 Fee {rt_str} dari {format_rupiah(nominal_int)} "
+                f"adalah {format_rupiah(fee_rupiah)}"
+            )
 
-        st.write("")  # spacer
+        elif jenis == "Gesek Bersih":
+            # Gesek Bersih: cari transaksi kotor & fee dengan rumus terbalik
+            transaksi_kotor = nominal_int / (1 - rate_decimal)
+            fee_rupiah = int(round(transaksi_kotor - nominal_int))
+            fee_info = (
+                f"💡 Fee {rt_str} dari {format_rupiah(nominal_int)} (bersih) "
+                f"adalah {format_rupiah(fee_rupiah)} "
+            )
 
-        # Dua kolom: kiri (breakdown), kanan (waktu)
-        left, right = st.columns([1.6, 1])
-        with left:
-            st.markdown("<div class='section-title'>➤ Rincian Biaya Tambahan</div>", unsafe_allow_html=True)
-            if breakdown_rows:
-                df_biaya = pd.DataFrame(breakdown_rows)[["Komponen", "Nominal"]]
-                st.table(df_biaya)
-            else:
-                st.caption("Tidak ada biaya tambahan yang dipilih.")
+    else:
+        # Jika tipe rate nominal (Rp), tampilkan langsung tanpa rumus persentase
+        fee_rupiah = nominal_rate
+        fee_info = (
+            f"💡 Fee tetap sebesar {format_rupiah(fee_rupiah)} "
+            f"berdasarkan nilai rate nominal."
+        )
 
-        with right:
-            st.markdown("<div class='section-title'>➤ Waktu</div>", unsafe_allow_html=True)
-            st.write(f"• Waktu Transaksi: **{waktu_mulai.strftime('%H:%M')}**")
-            st.write(f"• Estimasi Transfer: **{estimasi_selesai_transfer}**")
+    # ==============================
+    # Tampilkan hasil
+    # ==============================
+    st.markdown("<h2 style='text-align:center;'>📊 Hasil Perhitungan</h2>", unsafe_allow_html=True)
+    st.caption(f"{fee_info}")
 
-        # Kartu angka utama (Nominal Transfer, Nominal Transaksi, Biaya Tambahan)
-        st.markdown("<div class='card-grid'>", unsafe_allow_html=True)
-        st.markdown(f"<div class='card'><h4>Biaya Tambahan Total</h4><p>{format_rupiah(biaya_total)}</p></div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='card'><h4>Nominal Transfer</h4><p>{format_rupiah(nominal_transfer)}</p></div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='card'><h4>Nominal Transaksi</h4><p>{format_rupiah(nominal_transaksi)}</p></div>", unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
+    # Ringkasan input (jenis & rate) sebagai pill
+    colA, colB, colC = st.columns([1,1,1])
+    with colA:
+        st.markdown(f"<span class='pill'>Rate: <b>{rt_str}</b></span>", unsafe_allow_html=True)
+    with colB:
+        st.markdown(f"<span class='pill'>Jenis: <b>{jenis}</b></span>", unsafe_allow_html=True)
+    with colC:
+        # tampilkan label UI agar nampak harga di pilihan
+        st.markdown(f"<span class='pill'>Layanan: <b>{layanan_transfer_ui}</b></span>", unsafe_allow_html=True)
 
-        st.divider()
+    st.write("")  # spacer
+
+    # Dua kolom: kiri (breakdown), kanan (waktu)
+    left, right = st.columns([1.6, 1])
+    with left:
+        st.markdown("<div class='section-title'>➤ Rincian Biaya Tambahan</div>", unsafe_allow_html=True)
+        if breakdown_rows:
+            df_biaya = pd.DataFrame(breakdown_rows)[["Komponen", "Nominal"]]
+            st.table(df_biaya)
+        else:
+            st.caption("Tidak ada biaya tambahan yang dipilih.")
+
+    with right:
+        st.markdown("<div class='section-title'>➤ Waktu</div>", unsafe_allow_html=True)
+        st.write(f"• Waktu Transaksi: **{waktu_mulai.strftime('%H:%M')}**")
+        st.write(f"• Estimasi Transfer: **{estimasi_selesai_transfer}**")
+
+    # Kartu angka utama (Nominal Transfer, Nominal Transaksi, Biaya Tambahan)
+    st.markdown("<div class='card-grid'>", unsafe_allow_html=True)
+    st.markdown(f"<div class='card'><h4>Biaya Tambahan Total</h4><p>{format_rupiah(biaya_total)}</p></div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='card'><h4>Nominal Transfer</h4><p>{format_rupiah(nominal_transfer)}</p></div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='card'><h4>Nominal Transaksi</h4><p>{format_rupiah(nominal_transaksi)}</p></div>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    st.divider()
+
 
 
 
