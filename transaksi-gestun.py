@@ -264,17 +264,18 @@ def menu_pembagian_edc():
             )
 
 menu = st.sidebar.selectbox("Pilih Menu", [
-    "Hitung Nominal Transaksi",
-    "Input Data Transaksi",
-    "Jam",
-    "Proporsional Transaksi Besar",
+    "Konven",
+    "Marketplace",
+    "Input Data",
+    "Countdown",
+    "Proporsional",
 ])
 
 # ===============================
-# MENU 1: HITUNG NOMINAL TRANSAKSI (rapih, tanpa Keterangan Layanan)
+# MENU 1: Konvensional
 # ===============================
-if menu == "Hitung Nominal Transaksi":
-    st.header("💰 Hitung Nominal Transaksi")
+if menu == "Konven":
+    st.header("💰 Konvensional")
 
     # Pilihan jenis perhitungan
     jenis = st.selectbox("Pilih Jenis Perhitungan:", ["Gesek Kotor", "Gesek Bersih"])
@@ -421,11 +422,18 @@ if menu == "Hitung Nominal Transaksi":
     """, unsafe_allow_html=True)
     # =====================================
 
-    # Hitung & tampilkan hasil
-if st.button("Hitung Sekarang", disabled=(nominal_int <= 0)):
-    waktu_mulai = datetime.now(ZoneInfo("Asia/Jakarta"))
-    # gunakan tipe layanan yang dinormalisasi untuk estimasi durasi
-    estimasi_selesai_transfer = estimasi_selesai(waktu_mulai, estimasi_durasi(svc["normalized"]))
+    # Inisialisasi default agar tidak error sebelum tombol ditekan
+    waktu_mulai = None
+    estimasi_selesai_transfer = None
+
+    if st.button("Hitung Sekarang", disabled=(nominal_int <= 0)):
+        waktu_mulai = datetime.now(ZoneInfo("Asia/Jakarta"))
+        durasi = estimasi_durasi(svc["normalized"])
+
+        if waktu_mulai and durasi:  # pastikan dua-duanya tidak None
+            estimasi_selesai_transfer = estimasi_selesai(waktu_mulai, durasi)
+        else:
+            st.warning("Durasi layanan belum terdefinisi dengan benar.")
 
     # Perhitungan nominal (pakai round lalu int)
     if jenis == "Gesek Kotor":
@@ -507,8 +515,11 @@ if st.button("Hitung Sekarang", disabled=(nominal_int <= 0)):
 
     with right:
         st.markdown("<div class='section-title'>➤ Waktu</div>", unsafe_allow_html=True)
-        st.write(f"• Waktu Transaksi: **{waktu_mulai.strftime('%H:%M')}**")
-        st.write(f"• Estimasi Transfer: **{estimasi_selesai_transfer}**")
+        if waktu_mulai and estimasi_selesai_transfer:
+            st.write(f"• Waktu Transaksi: **{waktu_mulai.strftime('%H:%M')}**")
+            st.write(f"• Estimasi Transfer: **{estimasi_selesai_transfer}**")
+        else:
+            st.caption("Tekan tombol 'Hitung Sekarang' untuk menampilkan estimasi waktu.")
 
     # Kartu angka utama (Nominal Transfer, Nominal Transaksi, Biaya Tambahan)
     st.markdown("<div class='card-grid'>", unsafe_allow_html=True)
@@ -519,20 +530,113 @@ if st.button("Hitung Sekarang", disabled=(nominal_int <= 0)):
 
     st.divider()
 
+# =============================================
+# MENU 2: Marketplace
+# =============================================
+elif menu == "Marketplace":
+    st.title("🛒 Estimasi Pencairan Marketplace")
 
+    st.markdown("""
+    Masukkan data berikut untuk menghitung **estimasi pencairan setelah semua biaya** marketplace dan gestun.
 
+    💡 **Komponen biaya yang digunakan dalam perhitungan ini:**
+    - **Fee Merchant**: potongan dari marketplace (8%–14%)
+    - **Fee Gestun**: potongan jasa pencairan (1%–10%)
+    - **Biaya Toko Tokopedia**: Rp 15.000 *(hanya untuk Tokopedia)*
+    - **Biaya Super Kilat**: Rp 30.000 *(opsional)*
+    - **Biaya Admin Nasabah Baru**: Rp 10.000 *(opsional)*
+    - **Biaya Transfer Non-BCA**: Rp 10.000 *(opsional)*
+    """)
 
+    # --- Input nominal checkout ---
+    nominal_checkout_str = st.text_input(
+        label="Masukkan Nominal Checkout Produk (Rp):",
+        key="nominal_marketplace",
+    )
 
-        
+    # Fungsi ubah ke integer
+    def to_int(value):
+        try:
+            return int(value.replace("Rp", "").replace(".", "").replace(",", "").strip())
+        except:
+            return 0
 
+    nominal_checkout_int = to_int(nominal_checkout_str)
 
+    # --- Pilih marketplace ---
+    marketplace = st.selectbox("Pilih Marketplace", ["Tokopedia", "Shopee"])
 
+    # --- Fee merchant ---
+    fee_merchant = st.selectbox(
+    "Fee Merchant (%)",
+    [8, 9, 10, 11, 12, 13, 14],
+    index=5  
+)
+    # --- Fee gestun (selectbox) ---
+    fee_gestun = st.selectbox("Fee Gestun (%)", [8, 9, 10], index=0)
 
+    # --- Biaya tambahan ---
+    st.markdown("### ✅ Biaya Tambahan (Checklist sesuai kondisi aktual)")
+
+    biaya_admin_nasabah_baru = st.checkbox("Biaya Administrasi Nasabah Baru (Rp 10.000)", value=False)
+    biaya_transfer_non_bca = st.checkbox("Biaya Transfer Selain Bank BCA (Rp 10.000)", value=False)
+    biaya_toko = st.checkbox("Biaya Toko Tokopedia (Rp 15.000)", value=(marketplace == "Tokopedia"))
+    biaya_super_kilat_tokopedia = st.checkbox("Biaya Layanan Super Kilat Tokopedia (Rp 30.000)", value=False)
+    biaya_super_kilat_shopee = st.checkbox("Biaya Layanan Super Kilat Shopee (Rp 30.000)", value=False)
+
+    # Hitung total biaya tambahan
+    total_biaya_tambahan = 0
+    biaya_detail = []
+
+    if biaya_admin_nasabah_baru:
+        total_biaya_tambahan += 10_000
+        biaya_detail.append(("Biaya Admin Nasabah Baru", 10_000))
+    if biaya_transfer_non_bca:
+        total_biaya_tambahan += 10_000
+        biaya_detail.append(("Biaya Transfer Non-BCA", 10_000))
+    if biaya_toko:
+        total_biaya_tambahan += 15_000
+        biaya_detail.append(("Biaya Toko Tokopedia", 15_000))
+    if biaya_super_kilat_tokopedia:
+        total_biaya_tambahan += 30_000
+        biaya_detail.append(("Biaya Super Kilat Tokopedia", 30_000))
+    if biaya_super_kilat_shopee:
+        total_biaya_tambahan += 30_000
+        biaya_detail.append(("Biaya Super Kilat Shopee", 30_000))
+
+    # --- Tombol hitung ---
+    if st.button("Hitung Estimasi", disabled=(nominal_checkout_int <= 0)):
+        waktu_mulai = datetime.now(ZoneInfo("Asia/Jakarta"))
+
+        # Hitung semua biaya
+        fee_merchant_rp = nominal_checkout_int * (fee_merchant / 100)
+        fee_gestun_rp = nominal_checkout_int * (fee_gestun / 100)
+
+        # Rincian biaya
+        biaya_detail.insert(0, (f"Fee Merchant ({fee_merchant}%)", fee_merchant_rp))
+        biaya_detail.insert(1, (f"Fee Gestun ({fee_gestun}%)", fee_gestun_rp))
+
+        total_biaya = fee_merchant_rp + fee_gestun_rp + total_biaya_tambahan
+        nominal_diterima = nominal_checkout_int - total_biaya
+
+        # --- Tampilkan hasil estimasi ---
+        st.subheader("📊 Hasil Estimasi Pencairan")
+        st.write(f"**Waktu Perhitungan:** {waktu_mulai.strftime('%d %B %Y, %H:%M:%S')}")
+        st.write(f"**Nominal Checkout Produk:** Rp {nominal_checkout_int:,.0f}".replace(",", "."))
+
+        # --- Tabel breakdown biaya ---
+        st.markdown("#### 🧾 Rincian Biaya")
+        df_biaya = pd.DataFrame(biaya_detail, columns=["Jenis Biaya", "Nominal (Rp)"])
+        df_biaya["Nominal (Rp)"] = df_biaya["Nominal (Rp)"].apply(lambda x: f"Rp {x:,.0f}".replace(",", "."))
+        st.table(df_biaya)
+
+        st.markdown("---")
+        st.success(f"💸 **Estimasi Dana Diterima: Rp {nominal_diterima:,.0f}**".replace(",", "."))
 
 # =============================================
-# MENU 2: INPUT DATA TRANSAKSI
+# MENU 3: INPUT DATA TRANSAKSI
 # =============================================
-elif menu == "Input Data Transaksi":
+elif menu == "Input Data":
     st.title("Form Input Data Transaksi")
 
     # Biaya lain (non-layanan) — tetap tersembunyi dari user
@@ -733,30 +837,24 @@ elif menu == "Input Data Transaksi":
 """
         st.code(teks_output, language="text")
 
-
-
-
-
 # =============================================
-# MENU 3: Pembagian Transaksi EDC
+# MENU 5: Pembagian Transaksi EDC
 # =============================================
 
-elif menu == "Proporsional Transaksi Besar":
+elif menu == "Proporsional":
     menu_pembagian_edc()
 
 # =============================================
-# MENU 4: Jam
+# MENU 4: Countdown
 # =============================================
-elif menu == "Jam":
+elif menu == "Countdown":
     st.title("⏱️ Hitung Selisih Waktu Antar Jam")
 
-    # Atur default sekali saja
     if "start_time" not in st.session_state:
         st.session_state.start_time = datetime.now(ZoneInfo("Asia/Jakarta")).time()
     if "end_time" not in st.session_state:
         st.session_state.end_time = datetime.now(ZoneInfo("Asia/Jakarta")).time()
 
-    # Panggil widget hanya dengan key, tanpa value
     start_time = st.time_input("Waktu Mulai", key="start_time")
     end_time   = st.time_input("Waktu Selesai", key="end_time")
 
