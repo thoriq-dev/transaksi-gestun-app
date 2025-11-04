@@ -540,7 +540,7 @@ elif menu == "Marketplace":
     Masukkan data berikut untuk menghitung **estimasi pencairan setelah semua biaya** marketplace dan gestun.
 
     💡 **Komponen biaya yang digunakan dalam perhitungan ini:**
-    - **Fee Merchant**: potongan dari marketplace (8%–14%)
+    - **Fee Merchant**: potongan dari marketplace (8%–14%) *(bisa dikosongkan)*
     - **Fee Gestun**: potongan jasa pencairan (1%–10%)
     - **Biaya Toko Tokopedia**: Rp 15.000 *(hanya untuk Tokopedia)*
     - **Biaya Super Kilat**: Rp 30.000 *(opsional)*
@@ -566,12 +566,13 @@ elif menu == "Marketplace":
     # --- Pilih marketplace ---
     marketplace = st.selectbox("Pilih Marketplace", ["Tokopedia", "Shopee"])
 
-    # --- Fee merchant ---
+    # --- Fee merchant (opsional) ---
     fee_merchant = st.selectbox(
-    "Fee Merchant (%)",
-    [8, 9, 10, 11, 12, 13, 14],
-    index=5  
-)
+        "Fee Merchant (%)",
+        ["Tidak Ada", 8, 9, 10, 11, 12, 13, 14],
+        index=0
+    )
+
     # --- Fee gestun (selectbox) ---
     fee_gestun = st.selectbox("Fee Gestun (%)", [8, 9, 10, 11, 12, 13, 14, 15], index=0)
 
@@ -608,12 +609,16 @@ elif menu == "Marketplace":
     if st.button("Hitung Estimasi", disabled=(nominal_checkout_int <= 0)):
         waktu_mulai = datetime.now(ZoneInfo("Asia/Jakarta"))
 
-        # Hitung semua biaya
-        fee_merchant_rp = nominal_checkout_int * (fee_merchant / 100)
+        # Hitung fee merchant (bisa kosong)
+        fee_merchant_rp = 0 if fee_merchant == "Tidak Ada" else nominal_checkout_int * (fee_merchant / 100)
         fee_gestun_rp = nominal_checkout_int * (fee_gestun / 100)
 
         # Rincian biaya
-        biaya_detail.insert(0, (f"Fee Merchant ({fee_merchant}%)", fee_merchant_rp))
+        if fee_merchant != "Tidak Ada":
+            biaya_detail.insert(0, (f"Fee Merchant ({fee_merchant}%)", fee_merchant_rp))
+        else:
+            biaya_detail.insert(0, ("Fee Merchant (Tidak Ada)", 0))
+
         biaya_detail.insert(1, (f"Fee Gestun ({fee_gestun}%)", fee_gestun_rp))
 
         total_biaya = fee_merchant_rp + fee_gestun_rp + total_biaya_tambahan
@@ -621,7 +626,8 @@ elif menu == "Marketplace":
 
         # --- Tampilkan hasil estimasi ---
         st.subheader("📊 Hasil Estimasi Pencairan")
-        st.write(f"**Waktu Perhitungan:** {waktu_mulai.strftime('%d %B %Y, %H:%M:%S')}")
+        st.write(f"**Waktu Perhitungan:** {waktu_mulai.strftime('%d %B %Y, %H:%M:%S')} WIB")
+        st.write(f"**Marketplace:** {marketplace}")
         st.write(f"**Nominal Checkout Produk:** Rp {nominal_checkout_int:,.0f}".replace(",", "."))
 
         # --- Tabel breakdown biaya ---
