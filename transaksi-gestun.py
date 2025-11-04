@@ -573,7 +573,7 @@ elif menu == "Marketplace":
     index=5  
 )
     # --- Fee gestun (selectbox) ---
-    fee_gestun = st.selectbox("Fee Gestun (%)", [8, 9, 10], index=0)
+    fee_gestun = st.selectbox("Fee Gestun (%)", [8, 9, 10, 11, 12, 13, 14, 15], index=0)
 
     # --- Biaya tambahan ---
     st.markdown("### ✅ Biaya Tambahan (Checklist sesuai kondisi aktual)")
