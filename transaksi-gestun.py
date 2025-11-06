@@ -331,6 +331,7 @@ if menu == "Konven":
         "Biaya administrasi nasabah baru": 10_000,
         "Biaya transfer beda bank": 10_000,
         "Biaya transaksi di mesin edc": 2_000,
+        "Biaya qris by whatsapp": 3_000,
     }
 
     # Layanan transfer dengan label UI berisi harga + tipe dinormalisasi untuk estimasi durasi
