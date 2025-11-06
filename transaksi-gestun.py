@@ -491,7 +491,35 @@ if menu == "Konven":
     # ==============================
     # Tampilkan hasil
     # ==============================
-    st.markdown("<h2 style='text-align:center;'>📊 Hasil Perhitungan</h2>", unsafe_allow_html=True)
+    st.markdown("""
+    <style>
+    /* Warna dasar pill (mode terang) */
+    .pill {
+        display:inline-block;
+        padding:4px 10px;
+        border-radius:9999px;
+        background:#f3f4f6;
+        color:#111;
+        font-size:0.9rem;
+        font-weight:600;
+    }
+
+    /* Saat tema Streamlit gelap */
+    [data-testid="stAppViewContainer"][class*="dark"] .pill {
+        background: #1e293b; /* abu kebiruan gelap */
+        color: #f1f5f9;      /* teks putih kebiruan */
+        border: 1px solid #334155;
+    }
+
+    /* Tambahan efek hover biar elegan */
+    .pill:hover {
+        opacity: 0.9;
+        transform: scale(1.02);
+        transition: all 0.2s ease-in-out;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
     st.caption(f"{fee_info}")
 
     # Ringkasan input (jenis & rate) sebagai pill
