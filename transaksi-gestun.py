@@ -265,8 +265,8 @@ def menu_pembagian_edc():
 
 menu = st.sidebar.selectbox("Pilih Menu", [
     "Konven",
-    "Marketplace",
     "Input Data",
+    "Marketplace",
     "Countdown",
     "Proporsional",
 ])
@@ -562,117 +562,9 @@ if menu == "Konven":
 
     st.divider()
 
-# =============================================
-# MENU 2: Marketplace
-# =============================================
-elif menu == "Marketplace":
-    st.title("🛒 Estimasi Pencairan Marketplace")
-
-    st.markdown("""
-    Masukkan data berikut untuk menghitung **estimasi pencairan setelah semua biaya** marketplace dan gestun.
-
-    💡 **Komponen biaya yang digunakan dalam perhitungan ini:**
-    - **Fee Merchant**: potongan dari marketplace (8%–14%) *(bisa dikosongkan)*
-    - **Fee Gestun**: potongan jasa pencairan (1%–10%)
-    - **Biaya Toko Tokopedia**: Rp 15.000 *(hanya untuk Tokopedia)*
-    - **Biaya Super Kilat**: Rp 30.000 *(opsional)*
-    - **Biaya Admin Nasabah Baru**: Rp 10.000 *(opsional)*
-    - **Biaya Transfer Non-BCA**: Rp 10.000 *(opsional)*
-    """)
-
-    # --- Input nominal checkout ---
-    nominal_checkout_str = st.text_input(
-        label="Masukkan Nominal Checkout Produk (Rp):",
-        key="nominal_marketplace",
-    )
-
-    # Fungsi ubah ke integer
-    def to_int(value):
-        try:
-            return int(value.replace("Rp", "").replace(".", "").replace(",", "").strip())
-        except:
-            return 0
-
-    nominal_checkout_int = to_int(nominal_checkout_str)
-
-    # --- Pilih marketplace ---
-    marketplace = st.selectbox("Pilih Marketplace", ["Tokopedia", "Shopee"])
-
-    # --- Fee merchant (opsional) ---
-    fee_merchant = st.selectbox(
-        "Fee Merchant (%)",
-        ["Tidak Ada", 8, 9, 10, 11, 12, 13, 14],
-        index=0
-    )
-
-    # --- Fee gestun (selectbox) ---
-    fee_gestun = st.selectbox("Fee Gestun (%)", [8, 9, 10, 11, 12, 13, 14, 15], index=0)
-
-    # --- Biaya tambahan ---
-    st.markdown("### ✅ Biaya Tambahan (Checklist sesuai kondisi aktual)")
-
-    biaya_admin_nasabah_baru = st.checkbox("Biaya Administrasi Nasabah Baru (Rp 10.000)", value=False)
-    biaya_transfer_non_bca = st.checkbox("Biaya Transfer Selain Bank BCA (Rp 10.000)", value=False)
-    biaya_toko = st.checkbox("Biaya Toko Tokopedia (Rp 15.000)", value=(marketplace == "Tokopedia"))
-    biaya_super_kilat_tokopedia = st.checkbox("Biaya Layanan Super Kilat Tokopedia (Rp 30.000)", value=False)
-    biaya_super_kilat_shopee = st.checkbox("Biaya Layanan Super Kilat Shopee (Rp 30.000)", value=False)
-
-    # Hitung total biaya tambahan
-    total_biaya_tambahan = 0
-    biaya_detail = []
-
-    if biaya_admin_nasabah_baru:
-        total_biaya_tambahan += 10_000
-        biaya_detail.append(("Biaya Admin Nasabah Baru", 10_000))
-    if biaya_transfer_non_bca:
-        total_biaya_tambahan += 10_000
-        biaya_detail.append(("Biaya Transfer Non-BCA", 10_000))
-    if biaya_toko:
-        total_biaya_tambahan += 15_000
-        biaya_detail.append(("Biaya Toko Tokopedia", 15_000))
-    if biaya_super_kilat_tokopedia:
-        total_biaya_tambahan += 30_000
-        biaya_detail.append(("Biaya Super Kilat Tokopedia", 30_000))
-    if biaya_super_kilat_shopee:
-        total_biaya_tambahan += 30_000
-        biaya_detail.append(("Biaya Super Kilat Shopee", 30_000))
-
-    # --- Tombol hitung ---
-    if st.button("Hitung Estimasi", disabled=(nominal_checkout_int <= 0)):
-        waktu_mulai = datetime.now(ZoneInfo("Asia/Jakarta"))
-
-        # Hitung fee merchant (bisa kosong)
-        fee_merchant_rp = 0 if fee_merchant == "Tidak Ada" else nominal_checkout_int * (fee_merchant / 100)
-        fee_gestun_rp = nominal_checkout_int * (fee_gestun / 100)
-
-        # Rincian biaya
-        if fee_merchant != "Tidak Ada":
-            biaya_detail.insert(0, (f"Fee Merchant ({fee_merchant}%)", fee_merchant_rp))
-        else:
-            biaya_detail.insert(0, ("Fee Merchant (Tidak Ada)", 0))
-
-        biaya_detail.insert(1, (f"Fee Gestun ({fee_gestun}%)", fee_gestun_rp))
-
-        total_biaya = fee_merchant_rp + fee_gestun_rp + total_biaya_tambahan
-        nominal_diterima = nominal_checkout_int - total_biaya
-
-        # --- Tampilkan hasil estimasi ---
-        st.subheader("📊 Hasil Estimasi Pencairan")
-        st.write(f"**Waktu Perhitungan:** {waktu_mulai.strftime('%d %B %Y, %H:%M:%S')} WIB")
-        st.write(f"**Marketplace:** {marketplace}")
-        st.write(f"**Nominal Checkout Produk:** Rp {nominal_checkout_int:,.0f}".replace(",", "."))
-
-        # --- Tabel breakdown biaya ---
-        st.markdown("#### 🧾 Rincian Biaya")
-        df_biaya = pd.DataFrame(biaya_detail, columns=["Jenis Biaya", "Nominal (Rp)"])
-        df_biaya["Nominal (Rp)"] = df_biaya["Nominal (Rp)"].apply(lambda x: f"Rp {x:,.0f}".replace(",", "."))
-        st.table(df_biaya)
-
-        st.markdown("---")
-        st.success(f"💸 **Estimasi Dana Diterima: Rp {nominal_diterima:,.0f}**".replace(",", "."))
 
 # =============================================
-# MENU 3: INPUT DATA TRANSAKSI (DINAMIS + TAB + HITUNG OTOMATIS)
+# MENU 2: INPUT DATA TRANSAKSI (DINAMIS + TAB + HITUNG OTOMATIS)
 # =============================================
 elif menu == "Input Data":
     st.title("Form Input Data Transaksi")
@@ -789,7 +681,6 @@ Estimasi Selesai: {waktu_selesai}
             mdr_percent = st.number_input(
                 "Rate MDR (%)", min_value=0.0, max_value=100.0, step=0.1, format="%.2f"
             )
-            ru_str = f"{rt_percent - mdr_percent:.2f}%" if rt_type == "Persentase (%)" else rt_str
 
             # === Jenis Gestun & Nominal ===
             j_g = st.selectbox("Jenis Gestun", ["Kotor", "Bersih"])
@@ -801,6 +692,19 @@ Estimasi Selesai: {waktu_selesai}
             else:
                 trf = st.number_input("Jumlah Transfer (Rp)", min_value=0, step=200000, format="%d")
                 jt = int((trf / (1 - rate_decimal))) if rate_decimal > 0 else trf + nominal_rate
+
+            # === Hitung Rate Untung ===
+            if rt_type == "Persentase (%)":
+                ru_str = f"{rt_percent - mdr_percent:.2f}%"
+            else:
+                # Hitung MDR fee dalam Rupiah sesuai jenis gestun
+                if j_g == "Kotor":
+                    mdr_rp = jt * (mdr_percent / 100)
+                else:
+                    mdr_rp = trf * (mdr_percent / 100)
+
+                rate_untung_rp = nominal_rate - mdr_rp
+                ru_str = f"Rp {rate_untung_rp:,.0f}".replace(",", ".")
 
         with tab3:
             st.subheader("💰 Biaya & Hasil")
@@ -840,6 +744,16 @@ Estimasi Selesai: {waktu_selesai}
             estimasi = timedelta(hours=3)
             waktu_selesai = (datetime.now(ZoneInfo("Asia/Jakarta")) + estimasi).strftime("%H:%M WIB")
 
+            st.markdown("---")
+            st.subheader("👨‍💼 Data Petugas")
+
+            colA, colB = st.columns(2)
+            with colA:
+                petugas_nama = st.text_input("Nama Petugas")
+            with colB:
+                petugas_shift = st.selectbox("Shift Kerja", ["Pagi", "Siang", "Malam", "1 Shift"])
+
+
             # Tombol di luar form agar UI tetap interaktif
             if st.button("Generate WhatsApp Text"):
                 teks_output = f"""
@@ -859,14 +773,118 @@ _______________________________
 Jumlah Transfer : *{trf_fmt}*
 🕓 Estimasi Selesai: {waktu_selesai}
 
-Petugas:
+Petugas: {petugas_nama} ({petugas_shift})
 """
                 st.code(teks_output, language="text")
 
+# =============================================
+# MENU 2: Marketplace
+# =============================================
+elif menu == "Marketplace":
+    st.title("🛒 Estimasi Pencairan Marketplace")
 
+    st.markdown("""
+    Masukkan data berikut untuk menghitung **estimasi pencairan setelah semua biaya** marketplace dan gestun.
 
+    💡 **Komponen biaya yang digunakan dalam perhitungan ini:**
+    - **Fee Merchant**: potongan dari marketplace (8%–14%) *(bisa dikosongkan)*
+    - **Fee Gestun**: potongan jasa pencairan (1%–10%)
+    - **Biaya Toko Tokopedia**: Rp 15.000 *(hanya untuk Tokopedia)*
+    - **Biaya Super Kilat**: Rp 30.000 *(opsional)*
+    - **Biaya Admin Nasabah Baru**: Rp 10.000 *(opsional)*
+    - **Biaya Transfer Non-BCA**: Rp 10.000 *(opsional)*
+    """)
 
+    # --- Input nominal checkout ---
+    nominal_checkout_str = st.text_input(
+        label="Masukkan Nominal Checkout Produk (Rp):",
+        key="nominal_marketplace",
+    )
 
+    # Fungsi ubah ke integer
+    def to_int(value):
+        try:
+            return int(value.replace("Rp", "").replace(".", "").replace(",", "").strip())
+        except:
+            return 0
+
+    nominal_checkout_int = to_int(nominal_checkout_str)
+
+    # --- Pilih marketplace ---
+    marketplace = st.selectbox("Pilih Marketplace", ["Tokopedia", "Shopee"])
+
+    # --- Fee merchant (opsional) ---
+    fee_merchant = st.selectbox(
+        "Fee Merchant (%)",
+        ["Tidak Ada", 8, 9, 10, 11, 12, 13, 14],
+        index=0
+    )
+
+    # --- Fee gestun (selectbox) ---
+    fee_gestun = st.selectbox("Fee Gestun (%)", [8, 9, 10, 11, 12, 13, 14, 15], index=0)
+
+    # --- Biaya tambahan ---
+    st.markdown("### ✅ Biaya Tambahan (Checklist sesuai kondisi aktual)")
+
+    biaya_admin_nasabah_baru = st.checkbox("Biaya Administrasi Nasabah Baru (Rp 10.000)", value=False)
+    biaya_transfer_non_bca = st.checkbox("Biaya Transfer Selain Bank BCA (Rp 10.000)", value=False)
+    biaya_toko = st.checkbox("Biaya Toko Tokopedia (Rp 15.000)", value=(marketplace == "Tokopedia"))
+    biaya_super_kilat_tokopedia = st.checkbox("Biaya Layanan Super Kilat Tokopedia (Rp 30.000)", value=False)
+    biaya_super_kilat_shopee = st.checkbox("Biaya Layanan Super Kilat Shopee (Rp 30.000)", value=False)
+
+    # Hitung total biaya tambahan
+    total_biaya_tambahan = 0
+    biaya_detail = []
+
+    if biaya_admin_nasabah_baru:
+        total_biaya_tambahan += 10_000
+        biaya_detail.append(("Biaya Admin Nasabah Baru", 10_000))
+    if biaya_transfer_non_bca:
+        total_biaya_tambahan += 10_000
+        biaya_detail.append(("Biaya Transfer Non-BCA", 10_000))
+    if biaya_toko:
+        total_biaya_tambahan += 15_000
+        biaya_detail.append(("Biaya Toko Tokopedia", 15_000))
+    if biaya_super_kilat_tokopedia:
+        total_biaya_tambahan += 30_000
+        biaya_detail.append(("Biaya Super Kilat Tokopedia", 30_000))
+    if biaya_super_kilat_shopee:
+        total_biaya_tambahan += 30_000
+        biaya_detail.append(("Biaya Super Kilat Shopee", 30_000))
+
+    # --- Tombol hitung ---
+    if st.button("Hitung Estimasi", disabled=(nominal_checkout_int <= 0)):
+        waktu_mulai = datetime.now(ZoneInfo("Asia/Jakarta"))
+
+        # Hitung fee merchant (bisa kosong)
+        fee_merchant_rp = 0 if fee_merchant == "Tidak Ada" else nominal_checkout_int * (fee_merchant / 100)
+        fee_gestun_rp = nominal_checkout_int * (fee_gestun / 100)
+
+        # Rincian biaya
+        if fee_merchant != "Tidak Ada":
+            biaya_detail.insert(0, (f"Fee Merchant ({fee_merchant}%)", fee_merchant_rp))
+        else:
+            biaya_detail.insert(0, ("Fee Merchant (Tidak Ada)", 0))
+
+        biaya_detail.insert(1, (f"Fee Gestun ({fee_gestun}%)", fee_gestun_rp))
+
+        total_biaya = fee_merchant_rp + fee_gestun_rp + total_biaya_tambahan
+        nominal_diterima = nominal_checkout_int - total_biaya
+
+        # --- Tampilkan hasil estimasi ---
+        st.subheader("📊 Hasil Estimasi Pencairan")
+        st.write(f"**Waktu Perhitungan:** {waktu_mulai.strftime('%d %B %Y, %H:%M:%S')} WIB")
+        st.write(f"**Marketplace:** {marketplace}")
+        st.write(f"**Nominal Checkout Produk:** Rp {nominal_checkout_int:,.0f}".replace(",", "."))
+
+        # --- Tabel breakdown biaya ---
+        st.markdown("#### 🧾 Rincian Biaya")
+        df_biaya = pd.DataFrame(biaya_detail, columns=["Jenis Biaya", "Nominal (Rp)"])
+        df_biaya["Nominal (Rp)"] = df_biaya["Nominal (Rp)"].apply(lambda x: f"Rp {x:,.0f}".replace(",", "."))
+        st.table(df_biaya)
+
+        st.markdown("---")
+        st.success(f"💸 **Estimasi Dana Diterima: Rp {nominal_diterima:,.0f}**".replace(",", "."))
 
 
 # =============================================
