@@ -755,8 +755,14 @@ Estimasi Selesai: {waktu_selesai}
                 media = st.selectbox("Jenis Media Pencairan", [
                     "Mesin EDC - BNI Blurry Fashion Store",
                     "Mesin EDC - BRI Abadi Cell Sersan",
+                    "Mesin EDC - BCA Abadi Fashion Malang",
                     "Mesin EDC - BCA Idaman Clothes",
-                    "Mesin EDC - BCA AF Bekasi"
+                    "Mesin EDC - BCA AF Bekasi",
+                    "QRIS Statis - Indah Mebeul",
+                    "QRIS Statis - Bahagia Roastery",
+                    "QRIS Statis - Toko Jaya Grosir",
+                    "QRIS Statis - Bajuri Bike Center",
+                    "QRIS Statis - Sinar Elektronik Store",
                 ])
                 produk = st.text_input("Produk (misal: CC - BCA)")
 
@@ -789,11 +795,29 @@ Estimasi Selesai: {waktu_selesai}
             with tab3:
                 st.subheader("💰 Biaya & Hasil")
 
-                # === Biaya Tambahan ===
+                # === Biaya Tambahan (Editable) ===
+                st.markdown("#### 🧾 Input Biaya Tambahan")
+
+                col1, col2 = st.columns(2)
+                with col1:
+                    biaya_transfer = st.number_input(
+                        "Biaya Transfer Selain Bank BCA (Rp)", 
+                        min_value=0, 
+                        step=1000, 
+                        value=10_000, 
+                        format="%d"
+                    )
+                with col2:
+                    biaya_edc = st.number_input(
+                        "Biaya Transaksi di Mesin EDC (Rp)", 
+                        min_value=0, 
+                        step=500, 
+                        value=2_000, 
+                        format="%d"
+                    )
+
                 biaya_super = 0
                 biaya_baru = 10_000 if jenis == "Baru" else 0
-                biaya_transfer = 10_000  # contoh beda bank
-                biaya_edc = 2_000
 
                 total_biaya = biaya_super + biaya_baru + biaya_transfer + biaya_edc
 
@@ -814,26 +838,27 @@ Estimasi Selesai: {waktu_selesai}
 
                 if submit:
                     teks_output = f"""
-TRANSAKSI NO. {transaksi_no}
+            TRANSAKSI NO. {transaksi_no}
 
-- Nama Nasabah : {nama}
-- Kategori Nasabah : {jenis} ({kelas})
-- Jenis Media Pencairan : {media}
-- Produk : {produk}
-- Rate Jual : {rt_str}
-- Rate Untung : {ru_str}
-- Nominal Transaksi : *{jt_fmt}*
-- Biaya Layanan Super Kilat : Rp. {biaya_super:,}
-- Biaya Nasabah Baru : Rp. {biaya_baru:,}
-- Biaya Transfer Selain BCA : Rp. {biaya_transfer:,}
-- Biaya Transaksi di mesin EDC : Rp. {biaya_edc:,}
-_______________________________
-Jumlah Transfer : *{trf_fmt}*
-🕓 Estimasi Selesai: {waktu_selesai}
+            - Nama Nasabah : {nama}
+            - Kategori Nasabah : {jenis} ({kelas})
+            - Jenis Media Pencairan : {media}
+            - Produk : {produk}
+            - Rate Jual : {rt_str}
+            - Rate Untung : {ru_str}
+            - Nominal Transaksi : *{jt_fmt}*
+            - Biaya Layanan Super Kilat : Rp. {biaya_super:,}
+            - Biaya Nasabah Baru : Rp. {biaya_baru:,}
+            - Biaya Transfer Selain BCA : Rp. {biaya_transfer:,}
+            - Biaya Transaksi di Mesin EDC : Rp. {biaya_edc:,}
+            _______________________________
+            Jumlah Transfer : *{trf_fmt}*
+            🕓 Estimasi Selesai: {waktu_selesai}
 
-Petugas:
-"""
+            Petugas:
+            """
                     st.code(teks_output, language="text")
+
 
 
 
