@@ -691,21 +691,24 @@ elif menu == "Input Data":
     ]
     SVC_BY_LABEL = {s["label_ui"]: s for s in SVCS}
 
-    with st.form(key="form3"):
-        st.subheader("🧾 Data Transaksi")
-        transaksi_no = st.number_input("No. Transaksi", min_value=1, step=1, format="%d")
-        lay = st.selectbox("Jenis Layanan Transfer", [s["label_ui"] for s in SVCS])
-        svc = SVC_BY_LABEL[lay]
+    # === Input Layanan & Nomor Transaksi ===
+    st.subheader("🧾 Data Transaksi")
+    transaksi_no = st.number_input("No. Transaksi", min_value=1, step=1, format="%d")
+    lay = st.selectbox("Jenis Layanan Transfer", [s["label_ui"] for s in SVCS])
+    svc = SVC_BY_LABEL[lay]
 
-        # ====================================================
-        # MODE SUPER KILAT
-        # ====================================================
-        if "Super Kilat" in lay:
+    # ====================================================
+    # MODE SUPER KILAT
+    # ====================================================
+    if "Super Kilat" in lay:
+        with st.form(key="form_super"):
             st.markdown("### ⚡ Mode: Super Kilat")
             nama = st.text_input("Nama Nasabah")
             kategori = st.selectbox("Kategori Nasabah", ["Baru", "Langganan"])
 
-            rt_percent = st.number_input("Rate Jual (%)", min_value=0.0, max_value=100.0, step=0.1, format="%.2f")
+            rt_percent = st.number_input(
+                "Rate Jual (%)", min_value=0.0, max_value=100.0, step=0.1, format="%.2f"
+            )
             rate_decimal = rt_percent / 100
 
             trf = st.number_input("Jumlah Transfer (Rp)", min_value=0, step=200000, format="%d")
@@ -725,7 +728,7 @@ elif menu == "Input Data":
             if submit:
                 teks_output = f"""
 TRANSAKSI NO. {transaksi_no}
-SUPER KILAT 
+SUPER KILAT
 
 - Nama Nasabah : {nama}
 - Kategori Nasabah : {kategori}
@@ -736,128 +739,130 @@ Estimasi Selesai: {waktu_selesai}
 """
                 st.code(teks_output, language="text")
 
-        # ====================================================
-        # MODE NORMAL (PAKAI TAB)
-        # ====================================================
-        else:
-            st.markdown("### 🕓 Mode: Normal 3 Jam")
+    # ====================================================
+    # MODE NORMAL (TAB + HOT RELOAD)
+    # ====================================================
+    else:
+        st.markdown("### 🕓 Mode: Normal 3 Jam")
 
-            tab1, tab2, tab3 = st.tabs(["🧍 Data Nasabah", "💳 Detail Transaksi", "💰 Biaya & Hasil"])
+        tab1, tab2, tab3 = st.tabs(["🧍 Data Nasabah", "💳 Detail Transaksi", "💰 Biaya & Hasil"])
 
-            with tab1:
-                st.subheader("🧍 Data Nasabah")
-                nama = st.text_input("Nama Nasabah")
-                jenis = st.selectbox("Kategori Nasabah", ["Baru", "Langganan"])
-                kelas = st.selectbox("Kelas Nasabah", ["Non Member", "Gold", "Platinum", "Prioritas", "Silver"])
+        with tab1:
+            st.subheader("🧍 Data Nasabah")
+            nama = st.text_input("Nama Nasabah")
+            jenis = st.selectbox("Kategori Nasabah", ["Baru", "Langganan"])
+            kelas = st.selectbox("Kelas Nasabah", ["Non Member", "Gold", "Platinum", "Prioritas", "Silver"])
 
-            with tab2:
-                st.subheader("💳 Detail Transaksi")
-                media = st.selectbox("Jenis Media Pencairan", [
-                    "Mesin EDC - BNI Blurry Fashion Store",
-                    "Mesin EDC - BRI Abadi Cell Sersan",
-                    "Mesin EDC - BCA Abadi Fashion Malang",
-                    "Mesin EDC - BCA Idaman Clothes",
-                    "Mesin EDC - BCA AF Bekasi",
-                    "QRIS Statis - Indah Mebeul",
-                    "QRIS Statis - Bahagia Roastery",
-                    "QRIS Statis - Toko Jaya Grosir",
-                    "QRIS Statis - Bajuri Bike Center",
-                    "QRIS Statis - Sinar Elektronik Store",
-                ])
-                produk = st.text_input("Produk (misal: CC - BCA)")
+        with tab2:
+            st.subheader("💳 Detail Transaksi")
+            media = st.selectbox("Jenis Media Pencairan", [
+                "Mesin EDC - BNI Blurry Fashion Store",
+                "Mesin EDC - BRI Abadi Cell Sersan",
+                "Mesin EDC - BCA Abadi Fashion Malang",
+                "Mesin EDC - BCA Idaman Clothes",
+                "Mesin EDC - BCA AF Bekasi",
+                "QRIS Statis - Indah Mebeul",
+                "QRIS Statis - Bahagia Roastery",
+                "QRIS Statis - Toko Jaya Grosir",
+                "QRIS Statis - Bajuri Bike Center",
+                "QRIS Statis - Sinar Elektronik Store",
+            ])
+            produk = st.text_input("Produk (misal: CC - BCA)")
 
-                # === Rate Jual & MDR ===
-                rt_type = st.radio("Tipe Rate Jual", ["Persentase (%)", "Nominal (Rp)"], index=0, horizontal=True)
-                if rt_type == "Persentase (%)":
-                    rt_percent = st.number_input("Rate Jual (%)", min_value=0.0, max_value=100.0, step=0.1, format="%.2f")
-                    rate_decimal = rt_percent / 100
-                    nominal_rate = 0
-                    rt_str = f"{rt_percent:.2f}%"
-                else:
-                    nominal_rate = st.number_input("Rate Jual (Rp)", min_value=0, step=1000, format="%d")
-                    rate_decimal = 0
-                    rt_percent = 0
-                    rt_str = f"Rp {nominal_rate:,}"
+            # === Rate Jual ===
+            rt_type = st.radio("Tipe Rate Jual", ["Persentase (%)", "Nominal (Rp)"], key="rt_type", horizontal=True)
 
-                mdr_percent = st.number_input("Rate MDR (%)", min_value=0.0, max_value=100.0, step=0.1, format="%.2f")
-                ru_str = f"{rt_percent - mdr_percent:.2f}%" if rt_type == "Persentase (%)" else rt_str
+            # Hot reload otomatis ketika tipe rate berubah
+            if rt_type == "Persentase (%)":
+                rt_percent = st.number_input(
+                    "Rate Jual (%)", min_value=0.0, max_value=100.0, step=0.1, format="%.2f"
+                )
+                rate_decimal = rt_percent / 100
+                nominal_rate = 0
+                rt_str = f"{rt_percent:.2f}%"
+            else:
+                nominal_rate = st.number_input("Rate Jual (Rp)", min_value=0, step=1000, format="%d")
+                rate_decimal = 0
+                rt_percent = 0
+                rt_str = f"Rp {nominal_rate:,}"
 
-                # === Jenis Gestun & Nominal ===
-                j_g = st.selectbox("Jenis Gestun", ["Kotor", "Bersih"])
-                if j_g == "Kotor":
-                    jt = st.number_input("Jumlah Transaksi (Rp)", min_value=0, step=200000, format="%d")
-                    potongan = int(jt * rate_decimal) if rt_type == "Persentase (%)" else nominal_rate
-                    trf = jt - potongan
-                else:
-                    trf = st.number_input("Jumlah Transfer (Rp)", min_value=0, step=200000, format="%d")
-                    jt = int((trf / (1 - rate_decimal)))
+            mdr_percent = st.number_input(
+                "Rate MDR (%)", min_value=0.0, max_value=100.0, step=0.1, format="%.2f"
+            )
+            ru_str = f"{rt_percent - mdr_percent:.2f}%" if rt_type == "Persentase (%)" else rt_str
 
-            with tab3:
-                st.subheader("💰 Biaya & Hasil")
+            # === Jenis Gestun & Nominal ===
+            j_g = st.selectbox("Jenis Gestun", ["Kotor", "Bersih"])
 
-                # === Biaya Tambahan (Editable) ===
-                st.markdown("#### 🧾 Input Biaya Tambahan")
+            if j_g == "Kotor":
+                jt = st.number_input("Jumlah Transaksi (Rp)", min_value=0, step=200000, format="%d")
+                potongan = int(jt * rate_decimal) if rt_type == "Persentase (%)" else nominal_rate
+                trf = jt - potongan
+            else:
+                trf = st.number_input("Jumlah Transfer (Rp)", min_value=0, step=200000, format="%d")
+                jt = int((trf / (1 - rate_decimal))) if rate_decimal > 0 else trf + nominal_rate
 
-                col1, col2 = st.columns(2)
-                with col1:
-                    biaya_transfer = st.number_input(
-                        "Biaya Transfer Selain Bank BCA (Rp)", 
-                        min_value=0, 
-                        step=1000, 
-                        value=10_000, 
-                        format="%d"
-                    )
-                with col2:
-                    biaya_edc = st.number_input(
-                        "Biaya Transaksi di Mesin EDC (Rp)", 
-                        min_value=0, 
-                        step=500, 
-                        value=2_000, 
-                        format="%d"
-                    )
+        with tab3:
+            st.subheader("💰 Biaya & Hasil")
 
-                biaya_super = 0
-                biaya_baru = 10_000 if jenis == "Baru" else 0
+            # === Biaya Tambahan (Editable) ===
+            col1, col2 = st.columns(2)
+            with col1:
+                biaya_transfer = st.number_input(
+                    "Biaya Transfer Selain Bank BCA (Rp)",
+                    min_value=0,
+                    step=1000,
+                    value=10_000,
+                    format="%d"
+                )
+            with col2:
+                biaya_edc = st.number_input(
+                    "Biaya Transaksi di Mesin EDC (Rp)",
+                    min_value=0,
+                    step=500,
+                    value=2_000,
+                    format="%d"
+                )
 
-                total_biaya = biaya_super + biaya_baru + biaya_transfer + biaya_edc
+            biaya_super = 0
+            biaya_baru = 10_000 if jenis == "Baru" else 0
+            total_biaya = biaya_super + biaya_baru + biaya_transfer + biaya_edc
 
-                # === Hitung ulang total ===
-                jt_final = jt + total_biaya if j_g == "Bersih" else jt
-                trf_final = trf - total_biaya if j_g == "Kotor" else trf
+            jt_final = jt + total_biaya if j_g == "Bersih" else jt
+            trf_final = trf - total_biaya if j_g == "Kotor" else trf
 
-                jt_fmt = format_rupiah(jt_final)
-                trf_fmt = format_rupiah(trf_final)
+            jt_fmt = format_rupiah(jt_final)
+            trf_fmt = format_rupiah(trf_final)
 
-                st.text_input("Jumlah Transaksi (Rp)", value=jt_fmt, disabled=True)
-                st.text_input("Jumlah Transfer (Rp)", value=trf_fmt, disabled=True)
+            st.text_input("Jumlah Transaksi (Rp)", value=jt_fmt, disabled=True)
+            st.text_input("Jumlah Transfer (Rp)", value=trf_fmt, disabled=True)
 
-                estimasi = timedelta(hours=3)
-                waktu_selesai = (datetime.now(ZoneInfo("Asia/Jakarta")) + estimasi).strftime("%H:%M WIB")
+            estimasi = timedelta(hours=3)
+            waktu_selesai = (datetime.now(ZoneInfo("Asia/Jakarta")) + estimasi).strftime("%H:%M WIB")
 
-                submit = st.form_submit_button("Generate WhatsApp Text")
+            # Tombol di luar form agar UI tetap interaktif
+            if st.button("Generate WhatsApp Text"):
+                teks_output = f"""
+TRANSAKSI NO. {transaksi_no}
 
-                if submit:
-                    teks_output = f"""
-            TRANSAKSI NO. {transaksi_no}
+- Nama Nasabah : {nama}
+- Kategori Nasabah : {jenis} ({kelas})
+- Jenis Media Pencairan : {media}
+- Produk : {produk}
+- Rate Jual : {rt_str}
+- Rate Untung : {ru_str}
+- Nominal Transaksi : *{jt_fmt}*
+- Biaya Nasabah Baru : Rp. {biaya_baru:,}
+- Biaya Transfer Selain BCA : Rp. {biaya_transfer:,}
+- Biaya Transaksi di Mesin EDC : Rp. {biaya_edc:,}
+_______________________________
+Jumlah Transfer : *{trf_fmt}*
+🕓 Estimasi Selesai: {waktu_selesai}
 
-            - Nama Nasabah : {nama}
-            - Kategori Nasabah : {jenis} ({kelas})
-            - Jenis Media Pencairan : {media}
-            - Produk : {produk}
-            - Rate Jual : {rt_str}
-            - Rate Untung : {ru_str}
-            - Nominal Transaksi : *{jt_fmt}*
-            - Biaya Layanan Super Kilat : Rp. {biaya_super:,}
-            - Biaya Nasabah Baru : Rp. {biaya_baru:,}
-            - Biaya Transfer Selain BCA : Rp. {biaya_transfer:,}
-            - Biaya Transaksi di Mesin EDC : Rp. {biaya_edc:,}
-            _______________________________
-            Jumlah Transfer : *{trf_fmt}*
-            🕓 Estimasi Selesai: {waktu_selesai}
+Petugas:
+"""
+                st.code(teks_output, language="text")
 
-            Petugas:
-            """
-                    st.code(teks_output, language="text")
 
 
 
