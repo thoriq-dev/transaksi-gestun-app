@@ -596,57 +596,105 @@ Estimasi Selesai: {waktu_selesai}
 
         with tab2:
             st.subheader("💳 Detail Transaksi")
-            media = st.selectbox("Jenis Media Pencairan", [
-                "Mesin EDC - BNI Blurry Fashion Store",
-                "Mesin EDC - BRI Abadi Cell Sersan",
-                "Mesin EDC - BCA Abadi Fashion Malang",
-                "Mesin EDC - BCA Idaman Clothes",
-                "Mesin EDC - BCA AF Bekasi",
-                "QRIS Statis - Indah Mebeul",
-                "QRIS Statis - Bahagia Roastery",
-                "QRIS Statis - Toko Jaya Grosir",
-                "QRIS Statis - Bajuri Bike Center",
-                "QRIS Statis - Sinar Elektronik Store",
-            ])
-            produk = st.text_input("Produk (misal: CC - BCA)")
 
-            # === Rate Jual ===
-            rt_type = st.radio("Tipe Rate Jual", ["Persentase (%)", "Nominal (Rp)"], key="rt_type", horizontal=True)
-
-            # Hot reload otomatis ketika tipe rate berubah
-            if rt_type == "Persentase (%)":
-                rt_percent = st.number_input(
-                    "Rate Jual (%)", min_value=0.0, max_value=100.0, step=0.1, format="%.2f"
+            # ============================
+            # BARIS 1 — Media & Produk
+            # ============================
+            colA, colB = st.columns(2)
+            with colA:
+                media = st.selectbox(
+                    "Jenis Media Pencairan",
+                    [
+                        "Mesin EDC - BNI Blurry Fashion Store",
+                        "Mesin EDC - BRI Abadi Cell Sersan",
+                        "Mesin EDC - BCA Abadi Fashion Malang",
+                        "Mesin EDC - BCA Idaman Clothes",
+                        "Mesin EDC - BCA AF Bekasi",
+                        "QRIS Statis - Indah Mebeul",
+                        "QRIS Statis - Bahagia Roastery",
+                        "QRIS Statis - Toko Jaya Grosir",
+                        "QRIS Statis - Bajuri Bike Center",
+                        "QRIS Statis - Sinar Elektronik Store",
+                    ],
                 )
-                rate_decimal = rt_percent / 100
-                nominal_rate = 0
-                rt_str = f"{rt_percent:.2f}%"
-            else:
-                nominal_rate = st.number_input("Rate Jual (Rp)", min_value=0, step=1000, format="%d")
-                rate_decimal = 0
-                rt_percent = 0
-                rt_str = f"Rp {nominal_rate:,}"
+            with colB:
+                produk = st.text_input("Produk (misal: CC - BCA)")
 
-            mdr_percent = st.number_input(
-                "Rate MDR (%)", min_value=0.0, max_value=100.0, step=0.1, format="%.2f"
-            )
+            # ============================
+            # BARIS 2 — Rate Jual & Rate MDR
+            # ============================
+            col1, col2 = st.columns(2)
+            with col1:
+                rt_type = st.radio(
+                    "Tipe Rate Jual",
+                    ["Persentase (%)", "Nominal (Rp)"],
+                    key="rt_type",
+                    horizontal=True
+                )
 
-            # === Jenis Gestun & Nominal ===
-            j_g = st.selectbox("Jenis Gestun", ["Kotor", "Bersih"])
+                if rt_type == "Persentase (%)":
+                    rt_percent = st.number_input(
+                        "Rate Jual (%)",
+                        min_value=0.0,
+                        max_value=100.0,
+                        step=0.1,
+                        format="%.2f"
+                    )
+                    rate_decimal = rt_percent / 100
+                    nominal_rate = 0
+                    rt_str = f"{rt_percent:.2f}%"
+                else:
+                    nominal_rate = st.number_input(
+                        "Rate Jual (Rp)",
+                        min_value=0,
+                        step=1000,
+                        format="%d"
+                    )
+                    rate_decimal = 0
+                    rt_percent = 0
+                    rt_str = f"Rp {nominal_rate:,}"
 
-            if j_g == "Kotor":
-                jt = st.number_input("Jumlah Transaksi (Rp)", min_value=0, step=200000, format="%d")
-                potongan = int(jt * rate_decimal) if rt_type == "Persentase (%)" else nominal_rate
-                trf = jt - potongan
-            else:
-                trf = st.number_input("Jumlah Transfer (Rp)", min_value=0, step=200000, format="%d")
-                jt = int((trf / (1 - rate_decimal))) if rate_decimal > 0 else trf + nominal_rate
+            with col2:
+                mdr_percent = st.number_input(
+                    "Rate MDR (%)",
+                    min_value=0.0,
+                    max_value=100.0,
+                    step=0.1,
+                    format="%.2f"
+                )
 
-            # === Hitung Rate Untung ===
+            # ============================
+            # BARIS 3 — Jenis Gestun & Jumlah
+            # ============================
+            col3, col4 = st.columns(2)
+            with col3:
+                j_g = st.selectbox("Jenis Gestun", ["Kotor", "Bersih"])
+
+            with col4:
+                if j_g == "Kotor":
+                    jt = st.number_input(
+                        "Jumlah Transaksi (Rp)",
+                        min_value=0,
+                        step=200000,
+                        format="%d"
+                    )
+                    potongan = int(jt * rate_decimal) if rt_type == "Persentase (%)" else nominal_rate
+                    trf = jt - potongan
+                else:
+                    trf = st.number_input(
+                        "Jumlah Transfer (Rp)",
+                        min_value=0,
+                        step=200000,
+                        format="%d"
+                    )
+                    jt = int((trf / (1 - rate_decimal))) if rate_decimal > 0 else trf + nominal_rate
+
+            # ============================
+            # BARIS 4 — Rate Untung (ditampilkan saja)
+            # ============================
             if rt_type == "Persentase (%)":
                 ru_str = f"{rt_percent - mdr_percent:.2f}%"
             else:
-                # Hitung MDR fee dalam Rupiah sesuai jenis gestun
                 if j_g == "Kotor":
                     mdr_rp = jt * (mdr_percent / 100)
                 else:
@@ -654,6 +702,7 @@ Estimasi Selesai: {waktu_selesai}
 
                 rate_untung_rp = nominal_rate - mdr_rp
                 ru_str = f"Rp {rate_untung_rp:,.0f}".replace(",", ".")
+
 
         with tab3:
             st.subheader("💰 Biaya & Hasil")
@@ -700,7 +749,7 @@ Estimasi Selesai: {waktu_selesai}
             with colA:
                 petugas_nama = st.text_input("Nama Petugas")
             with colB:
-                petugas_shift = st.selectbox("Shift Kerja", ["Pagi", "Siang", "Malam", "1 Shift"])
+                petugas_shift = st.selectbox("Shift Kerja", ["1 Shift", "Pagi", "Siang", "Malam"])
 
 
             # Tombol di luar form agar UI tetap interaktif
