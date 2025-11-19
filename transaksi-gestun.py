@@ -647,7 +647,7 @@ elif menu == "Input Data":
 
                 teks_output = f"""
 TRANSAKSI NO. {transaksi_no}
-SUPER KILAT
+EXPRESS
 
 - Nama Nasabah : {nama}
 - Kategori Nasabah : {kategori}
