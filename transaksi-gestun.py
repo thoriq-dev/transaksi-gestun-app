@@ -349,7 +349,7 @@ if menu == "Konven":
         BIAYA_TAMBAHAN = {
             "Biaya administrasi nasabah baru": 10_000,
             "Biaya transfer beda bank": 10_000,
-            "Biaya transaksi di mesin edc": 2_000,
+            "Biaya transaksi di mesin edc": 3_000,
             "Biaya qris by whatsapp": 3_000,
         }
 
