@@ -685,6 +685,7 @@ Estimasi Selesai: {waktu_selesai}
                 "QRIS Statis - Toko Jaya Grosir",
                 "QRIS Statis - Bajuri Bike Center",
                 "QRIS Statis - Sinar Elektronik Store",
+                "Quickbill - Phonefoyer",
             ])
             produk = st.text_input("Produk (misal: CC - BCA)")
 
@@ -751,7 +752,7 @@ Estimasi Selesai: {waktu_selesai}
                     "Biaya Transaksi di Mesin EDC (Rp)",
                     min_value=0,
                     step=500,
-                    value=2_000,
+                    value=3_000,
                     format="%d"
                 )
 
@@ -816,7 +817,7 @@ elif menu == "Marketplace":
     💡 **Komponen biaya yang digunakan dalam perhitungan ini:**
     - **Fee Merchant**: potongan dari marketplace (8%–14%) *(bisa dikosongkan)*
     - **Fee Gestun**: potongan jasa pencairan (1%–10%)
-    - **Biaya Toko Tokopedia**: Rp 15.000 *(hanya untuk Tokopedia)*
+    - **Biaya Toko Tokopedia**: Rp 10.000 *(hanya untuk Tokopedia)*
     - **Biaya Super Kilat**: Rp 30.000 *(opsional)*
     - **Biaya Admin Nasabah Baru**: Rp 10.000 *(opsional)*
     - **Biaya Transfer Non-BCA**: Rp 10.000 *(opsional)*
@@ -843,19 +844,21 @@ elif menu == "Marketplace":
     # --- Fee merchant (opsional) ---
     fee_merchant = st.selectbox(
         "Fee Merchant (%)",
-        ["Tidak Ada", 8, 9, 10, 11, 12, 13, 14],
+        ["Tidak Ada", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
         index=0
     )
 
     # --- Fee gestun (selectbox) ---
-    fee_gestun = st.selectbox("Fee Gestun (%)", [8, 9, 10, 11, 12, 13, 14, 15], index=0)
+    fee_gestun = st.selectbox("Fee Gestun (%)", ["Tidak Ada", 8, 9, 10, 11, 12, 13, 14],
+        index=0
+    )
 
     # --- Biaya tambahan ---
     st.markdown("### ✅ Biaya Tambahan (Checklist sesuai kondisi aktual)")
 
     biaya_admin_nasabah_baru = st.checkbox("Biaya Administrasi Nasabah Baru (Rp 10.000)", value=False)
     biaya_transfer_non_bca = st.checkbox("Biaya Transfer Selain Bank BCA (Rp 10.000)", value=False)
-    biaya_toko = st.checkbox("Biaya Toko Tokopedia (Rp 15.000)", value=(marketplace == "Tokopedia"))
+    biaya_toko = st.checkbox("Biaya Toko Tokopedia (Rp 10.000)", value=(marketplace == "Tokopedia"))
     biaya_super_kilat_tokopedia = st.checkbox("Biaya Layanan Super Kilat Tokopedia (Rp 30.000)", value=False)
     biaya_super_kilat_shopee = st.checkbox("Biaya Layanan Super Kilat Shopee (Rp 30.000)", value=False)
 
@@ -870,8 +873,8 @@ elif menu == "Marketplace":
         total_biaya_tambahan += 10_000
         biaya_detail.append(("Biaya Transfer Non-BCA", 10_000))
     if biaya_toko:
-        total_biaya_tambahan += 15_000
-        biaya_detail.append(("Biaya Toko Tokopedia", 15_000))
+        total_biaya_tambahan += 10_000
+        biaya_detail.append(("Biaya Toko Tokopedia", 10_000))
     if biaya_super_kilat_tokopedia:
         total_biaya_tambahan += 30_000
         biaya_detail.append(("Biaya Super Kilat Tokopedia", 30_000))
