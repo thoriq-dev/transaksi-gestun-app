@@ -551,6 +551,10 @@ elif menu == "Input Data":
             # ----------------------------
             nama = st.text_input("Nama Nasabah")
             kategori = st.selectbox("Kategori Nasabah", ["Baru", "Langganan"])
+            kelas = st.selectbox(
+                "Kelas Nasabah",
+                ["Non Member", "Gold", "Platinum", "Prioritas", "Silver"]
+            )
 
             # ----------------------------
             # METODE PERHITUNGAN
@@ -588,25 +592,20 @@ elif menu == "Input Data":
             # INPUT + PERHITUNGAN NOMINAL
             # ----------------------------
             if metode == "Gesek Kotor":
-                # User memasukkan JUMALH TRANSAKSI
                 jt_input = st.number_input("Jumlah Transaksi (Rp)", min_value=0, step=200000, format="%d")
 
-                # Hitung fee
                 if fee_type == "Persentase (%)":
                     fee = int(jt_input * fee_decimal)
                 else:
                     fee = int(fee_flat)
 
-                # Hitung jumlah transfer bersih
                 jumlah_transfer = jt_input - fee - biaya_layanan_total
-                jumlah_transaksi = jt_input  # final
+                jumlah_transaksi = jt_input
 
             else:  # Gesek Bersih
-                # User memasukkan JUMLAH TRANSFER
                 trf_input = st.number_input("Jumlah Transfer (Rp)", min_value=0, step=200000, format="%d")
 
                 if fee_type == "Persentase (%)":
-                    # Rumus: JT = (Transfer + biaya) / (1 - fee%)
                     jumlah_transaksi = int((trf_input + biaya_layanan_total) / (1 - fee_decimal))
                     fee = int(jumlah_transaksi * fee_decimal)
                 else:
@@ -643,7 +642,7 @@ elif menu == "Input Data":
             # OUTPUT WA
             # ----------------------------
             if submit:
-                rate_jual = fee_persen  # Rate Jual = Fee (%) bila dipakai untuk tampilan
+                rate_jual = fee_persen
 
                 teks_output = f"""
 TRANSAKSI NO. {transaksi_no}
@@ -651,12 +650,14 @@ EXPRESS
 
 - Nama Nasabah : {nama}
 - Kategori Nasabah : {kategori}
+- Kelas Nasabah : {kelas}
 - Rate Jual : {rate_jual:.2f}%
 - Jumlah Transfer : *{trf_fmt}*
 _______________________________
 Estimasi Selesai: {waktu_selesai}
 """
                 st.code(teks_output, language="text")
+
 
     # ====================================================
     # MODE NORMAL (TAB + HOT RELOAD)
