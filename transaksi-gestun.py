@@ -697,7 +697,7 @@ Estimasi Selesai: {waktu_selesai}
                             "CC - CIMB Niaga",
                             "CC - Danamon",
                             "CC - PermataBank",
-                            "CC - Bank Mega",
+                            "CC - Mega",
                             "CC - Maybank",
                             "CC - OCBC NISP",
                             "CC - UOB",
@@ -706,20 +706,28 @@ Estimasi Selesai: {waktu_selesai}
                             "CC - Standard Chartered",
                             "CC - PaninBank",
                             "CC - Sinarmas",
+                            "CC - Honest",
+                            "CC - Atome",
                             # Tambahkan bank lain jika kamu sering handle
                         ]
             PAYLATER = [
                 "PayLater - Shopee PayLater",
                 "PayLater - GoPayLater",
-                "PayLater - Tokopedia (GoPayLater)",
                 "PayLater - OVO PayLater",
                 "PayLater - DANA PayLater",
                 "PayLater - Kredivo",
                 "PayLater - Akulaku",
                 "PayLater - Atome",
                 "PayLater - Indodana",
-                "PayLater - Traveloka PayLater",
                 "PayLater - Blibli/Tiket PayLater",
+                "PayLater - Traveloka PayLater",
+                "PayLater - BCA PayLater",
+                "PayLater - BRI Ceria",
+                "PayLater - Credinex",
+                "PayLater - Akulaku PayLater",
+                "PayLater - HomeCredit Bayar Nanti",
+                "PayLater - Lazada PayLater",
+                "PayLater - Sampurna YUP",
                 # Provider BNPL yang umum disebut dalam lanskap Indonesia
             ]
 
