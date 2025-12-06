@@ -688,7 +688,80 @@ Estimasi Selesai: {waktu_selesai}
                 "QRIS Statis - Sinar Elektronik Store",
                 "Quickbill - Phonefoyer",
             ])
-            produk = st.text_input("Produk (misal: CC - BCA)")
+            CC_BANKS = [
+                            "CC - BCA",
+                            "CC - Mandiri",
+                            "CC - BNI",
+                            "CC - BRI",
+                            "CC - BTN",
+                            "CC - CIMB Niaga",
+                            "CC - Danamon",
+                            "CC - PermataBank",
+                            "CC - Bank Mega",
+                            "CC - Maybank",
+                            "CC - OCBC NISP",
+                            "CC - UOB",
+                            "CC - HSBC",
+                            "CC - DBS",
+                            "CC - Standard Chartered",
+                            "CC - PaninBank",
+                            "CC - Sinarmas",
+                            # Tambahkan bank lain jika kamu sering handle
+                        ]
+            PAYLATER = [
+                "PayLater - Shopee PayLater",
+                "PayLater - GoPayLater",
+                "PayLater - Tokopedia (GoPayLater)",
+                "PayLater - OVO PayLater",
+                "PayLater - DANA PayLater",
+                "PayLater - Kredivo",
+                "PayLater - Akulaku",
+                "PayLater - Atome",
+                "PayLater - Indodana",
+                "PayLater - Traveloka PayLater",
+                "PayLater - Blibli/Tiket PayLater",
+                # Provider BNPL yang umum disebut dalam lanskap Indonesia
+            ]
+
+            # Provider PayLater besar yang sering muncul di pembahasan pasar:
+            # Kredivo, Akulaku, Atome, Shopee PayLater, GoPayLater, Indodana, DANA PayLater, Traveloka PayLater, dll. :contentReference[oaicite:1]{index=1}
+
+            PRODUCT_GROUPS = {
+                "Kartu Kredit": CC_BANKS,
+                "PayLater": PAYLATER,
+            }
+
+            # =========================
+            # UI INPUT PRODUK
+            # =========================
+
+            st.markdown("### Produk")
+
+            kategori_produk = st.selectbox(
+                "Kategori Produk",
+                ["Kartu Kredit", "PayLater", "Lainnya / Tulis Bebas"],
+                index=0
+            )
+
+            if kategori_produk in PRODUCT_GROUPS:
+                options = PRODUCT_GROUPS[kategori_produk] + ["Lainnya / Custom..."]
+
+                produk_pilihan = st.selectbox(
+                    f"Pilih {kategori_produk}",
+                    options,
+                    index=0
+                )
+
+                if produk_pilihan == "Lainnya / Custom...":
+                    contoh = "CC - BCA Visa Platinum" if kategori_produk == "Kartu Kredit" else "PayLater - <Nama Provider>"
+                    produk = st.text_input("Tulis Produk", placeholder=f"Contoh: {contoh}")
+                else:
+                    produk = produk_pilihan
+
+            else:
+                produk = st.text_input("Tulis Produk", placeholder="Contoh: CC - BCA / PayLater - Kredivo")
+
+            produk = (produk or "").strip()
 
             # === Rate Jual ===
             rt_type = st.radio("Tipe Rate Jual", ["Persentase (%)", "Nominal (Rp)"], key="rt_type", horizontal=True)
