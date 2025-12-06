@@ -349,7 +349,7 @@ if menu == "Konven":
         BIAYA_TAMBAHAN = {
             "Biaya administrasi nasabah baru": 10_000,
             "Biaya transfer beda bank": 10_000,
-            "Biaya transaksi di mesin edc": 3_000,
+            "Biaya transaksi di mesin edc": 2_000,
             "Biaya qris by whatsapp": 3_000,
         }
 
@@ -454,7 +454,7 @@ if menu == "Konven":
                 nominal_transaksi = nominal_int
             else:
                 if tipe_rate == "Persentase (%)":
-                    fee_rupiah = int(round(nominal_int / (1 - rate_decimal) - nominal_int))
+                    fee_rupiah = int(round((nominal_int / (1 - rate_decimal)) - nominal_int)) + 1000
                     fee = fee_rupiah
                 else:
                     fee_rupiah = nominal_rate
@@ -606,7 +606,7 @@ elif menu == "Input Data":
                 trf_input = st.number_input("Jumlah Transfer (Rp)", min_value=0, step=200000, format="%d")
 
                 if fee_type == "Persentase (%)":
-                    jumlah_transaksi = int((trf_input + biaya_layanan_total) / (1 - fee_decimal))
+                    jumlah_transaksi = int((trf_input + biaya_layanan_total) / (1 - fee_decimal)) + 1000
                     fee = int(jumlah_transaksi * fee_decimal)
                 else:
                     jumlah_transaksi = trf_input + biaya_layanan_total + fee_flat
@@ -720,7 +720,13 @@ Estimasi Selesai: {waktu_selesai}
                 trf = jt - potongan
             else:
                 trf = st.number_input("Jumlah Transfer (Rp)", min_value=0, step=200000, format="%d")
-                jt = int((trf / (1 - rate_decimal))) if rate_decimal > 0 else trf + nominal_rate
+                jt = (
+                        int(round(trf / (1 - rate_decimal)))
+                        if rate_decimal and 0 < rate_decimal < 1
+                        else int(trf + (nominal_rate or 0))
+                    ) + 1000
+
+
 
             # === Hitung Rate Untung ===
             if rt_type == "Persentase (%)":
@@ -753,7 +759,7 @@ Estimasi Selesai: {waktu_selesai}
                     "Biaya Transaksi di Mesin EDC (Rp)",
                     min_value=0,
                     step=500,
-                    value=3_000,
+                    value=2_000,
                     format="%d"
                 )
 
