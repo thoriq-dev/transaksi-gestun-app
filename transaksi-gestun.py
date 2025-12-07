@@ -831,7 +831,7 @@ Estimasi Selesai: {waktu_selesai}
                 biaya_transfer = st.number_input(
                     "Biaya Transfer Selain Bank BCA (Rp)",
                     min_value=0,
-                    step=1000,
+                    step=10000,
                     value=10_000,
                     format="%d"
                 )
