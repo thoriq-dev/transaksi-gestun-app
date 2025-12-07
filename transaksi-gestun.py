@@ -648,11 +648,11 @@ elif menu == "Input Data":
 TRANSAKSI NO. {transaksi_no}
 EXPRESS
 
-- Nama Nasabah : {nama}
-- Kategori Nasabah : {kategori}
-- Kelas Nasabah : {kelas}
-- Rate Jual : {rate_jual:.2f}%
-- Jumlah Transfer : *{trf_fmt}*
+• Nama Nasabah : {nama}
+• Kategori Nasabah : {kategori}
+• Kelas Nasabah : {kelas}
+• Rate Jual : {rate_jual:.2f}%
+• Jumlah Transfer : *{trf_fmt}*
 _______________________________
 Estimasi Selesai: {waktu_selesai}
 """
@@ -860,24 +860,24 @@ Estimasi Selesai: {waktu_selesai}
 
             if st.button("Generate WhatsApp Text"):
                 teks_output = f"""
-    TRANSAKSI NO. {transaksi_no}
+TRANSAKSI NO. {transaksi_no}
 
-    - Nama Nasabah : {nama}
-    - Kategori Nasabah : {jenis} ({kelas})
-    - Jenis Media Pencairan : {media}
-    - Produk : {produk}
-    - Rate Jual : {rt_str}
-    - Rate Untung : {ru_str}
-    - Nominal Transaksi : *{jt_fmt}*
-    - Biaya Nasabah Baru : Rp. {biaya_baru:,}
-    - Biaya Transfer Selain BCA : Rp. {biaya_transfer:,}
-    - Biaya Transaksi di Mesin EDC : Rp. {biaya_edc:,}
-    - Biaya Layanan QRIS By WhatsApp : Rp. {biaya_qris_wa:,}
-    _______________________________
-    Jumlah Transfer : *{trf_fmt}*
-    🕓 Estimasi Selesai: {waktu_selesai}
+• Nama Nasabah : {nama}
+• Kategori Nasabah : {jenis} ({kelas})
+• Jenis Media Pencairan : {media}
+• Produk : {produk}
+• Rate Jual : {rt_str}
+• Rate Untung : {ru_str}
+• Nominal Transaksi : *{jt_fmt}*
+• Biaya Nasabah Baru : Rp. {biaya_baru:,}
+• Biaya Transfer Selain BCA : Rp. {biaya_transfer:,}
+• Biaya Transaksi di Mesin EDC : Rp. {biaya_edc:,}
+• Biaya Layanan QRIS By WhatsApp : Rp. {biaya_qris_wa:,}
+_______________________________
+   Jumlah Transfer : *{trf_fmt}*
+🕓 Estimasi Selesai: {waktu_selesai}
 
-    Petugas: {petugas_nama} ({petugas_shift})
+Petugas: {petugas_nama} ({petugas_shift})
     """
                 st.code(teks_output, language="text")
 
