@@ -860,7 +860,7 @@ Estimasi Selesai: {waktu_selesai}
 
             if st.button("Generate WhatsApp Text"):
                 teks_output = f"""
-TRANSAKSI NO. {transaksi_no}
+TRANSAKSI NO. *{transaksi_no}*
 
 • Nama Nasabah : {nama}
 • Kategori Nasabah : {jenis} ({kelas})
@@ -874,7 +874,7 @@ TRANSAKSI NO. {transaksi_no}
 • Biaya Transaksi di Mesin EDC : Rp. {biaya_edc:,}
 • Biaya Layanan QRIS By WhatsApp : Rp. {biaya_qris_wa:,}
 _______________________________
-   Jumlah Transfer : *{trf_fmt}*
+Jumlah Transfer : *{trf_fmt}*
 🕓 Estimasi Selesai: {waktu_selesai}
 
 Petugas: {petugas_nama} ({petugas_shift})
