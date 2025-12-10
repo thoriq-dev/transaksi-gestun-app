@@ -251,13 +251,14 @@ menu = st.sidebar.selectbox("Pilih Menu", [
     "Proporsional",
 ])
 # ===============================
-# MENU 1: Konvensional 
+# MENU 1: Konvensional
 # ===============================
 if menu == "Konven":
     st.header("💰 Konvensional")
     col_input, col_output = st.columns([1.3, 1])
     with col_input:
         jenis = st.selectbox("Pilih Jenis Perhitungan:", ["Gesek Kotor", "Gesek Bersih"])
+
         tipe_rate = st.selectbox(
             "Tipe Rate Jual:",
             ["Persentase (%)", "Nominal (Rp)"],
@@ -386,8 +387,8 @@ if menu == "Konven":
 
                 nominal_transfer = max(0, nominal_transfer)
                 nominal_transaksi = nominal_int
-
             else:
+                # Gesek Bersih (MODEL gross-up net + biaya_total + 1.000)
                 if tipe_rate == "Persentase (%)":
                     nominal_transaksi = int((nominal_int + biaya_total) / (1 - rate_decimal)) + EXTRA_FEE_BERSIH
                     fee_rupiah = int(nominal_transaksi * rate_decimal)
@@ -397,28 +398,64 @@ if menu == "Konven":
 
                 nominal_transfer = nominal_int
             if tipe_rate == "Persentase (%)":
-                fee_info = (
-                    f"💡 Fee {rt_str} dari {format_rupiah(nominal_int)} "
-                    f"adalah {format_rupiah(fee_rupiah)}"
-                )
+                if jenis == "Gesek Kotor":
+                    fee_info = (
+                        f"💡 Fee {rt_str} dari {format_rupiah(nominal_int)} "
+                        f"adalah {format_rupiah(fee_rupiah)}"
+                    )
+                else:
+                    fee_info = (
+                        f"💡 Fee {rt_str} dari {format_rupiah(nominal_int)} (bersih, gross-up biaya) "
+                        f"adalah {format_rupiah(fee_rupiah)}"
+                    )
             else:
-                fee_info = (
-                    f"💡 Fee tetap sebesar {format_rupiah(fee_rupiah)} "
-                    f"(rate nominal + tambahan bersih {format_rupiah(EXTRA_FEE_BERSIH)})."
-                )
-            st.caption(f"{fee_info}")
-            st.markdown("<div class='<h3>'>➤ Waktu</div>", unsafe_allow_html=True)
+                if jenis == "Gesek Bersih":
+                    fee_info = (
+                        f"💡 Fee tetap sebesar {format_rupiah(fee_rupiah)} "
+                        f"(rate nominal + tambahan bersih {format_rupiah(EXTRA_FEE_BERSIH)})."
+                    )
+                else:
+                    fee_info = (
+                        f"💡 Fee tetap sebesar {format_rupiah(fee_rupiah)} "
+                        f"berdasarkan nilai rate nominal."
+                    )
+
+            st.caption(fee_info)
+            colA, colB, colC = st.columns(3)
+            with colA:
+                st.markdown(f"<span class='pill'>Rate: <b>{rt_str}</b></span>", unsafe_allow_html=True)
+            with colB:
+                st.markdown(f"<span class='pill'>Jenis: <b>{jenis}</b></span>", unsafe_allow_html=True)
+            with colC:
+                st.markdown(f"<span class='pill'>Layanan: <b>{layanan_transfer_ui}</b></span>", unsafe_allow_html=True)
+            st.markdown("<div class='section-title'>➤ Rincian Biaya Tambahan</div>", unsafe_allow_html=True)
+            if breakdown_rows:
+                df_biaya = pd.DataFrame(breakdown_rows)[["Komponen", "Nominal"]]
+                st.table(df_biaya)
+            else:
+                st.caption("Tidak ada biaya tambahan yang dipilih.")
+            st.markdown("<div class='section-title'>➤ Waktu</div>", unsafe_allow_html=True)
             if waktu_mulai and estimasi_selesai_transfer:
                 st.write(f"• Waktu Transaksi: **{waktu_mulai.strftime('%H:%M')}**")
                 st.write(f"• Estimasi Transfer: **{estimasi_selesai_transfer}**")
             else:
                 st.caption("Tekan tombol 'Hitung Sekarang' untuk menampilkan estimasi waktu.")
             st.markdown("<div class='card-grid'>", unsafe_allow_html=True)
-            st.markdown(f"<div class='card'><h4>Biaya Tambahan Total</h4><p>{format_rupiah(biaya_total)}</p></div>", unsafe_allow_html=True)
-            st.markdown(f"<div class='card'><h4>Nominal Transfer</h4><p>{format_rupiah(nominal_transfer)}</p></div>", unsafe_allow_html=True)
-            st.markdown(f"<div class='card'><h4>Nominal Transaksi</h4><p>{format_rupiah(nominal_transaksi)}</p></div>", unsafe_allow_html=True)
+            st.markdown(
+                f"<div class='card'><h4>Biaya Tambahan Total</h4><p>{format_rupiah(biaya_total)}</p></div>",
+                unsafe_allow_html=True
+            )
+            st.markdown(
+                f"<div class='card'><h4>Nominal Transfer</h4><p>{format_rupiah(nominal_transfer)}</p></div>",
+                unsafe_allow_html=True
+            )
+            st.markdown(
+                f"<div class='card'><h4>Nominal Transaksi</h4><p>{format_rupiah(nominal_transaksi)}</p></div>",
+                unsafe_allow_html=True
+            )
             st.markdown("</div>", unsafe_allow_html=True)
             st.divider()
+
 
 # =============================================
 # MENU 2: INPUT DATA TRANSAKSI (DINAMIS + TAB + HITUNG OTOMATIS)
