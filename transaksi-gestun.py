@@ -458,7 +458,7 @@ if menu == "Konven":
 
 
 # =============================================
-# MENU 2: INPUT DATA TRANSAKSI (DINAMIS + TAB + HITUNG OTOMATIS)
+# MENU 2: INPUT DATA TRANSAKSI
 # =============================================
 elif menu == "Input Data":
     st.title("Form Input Data Transaksi")
@@ -471,8 +471,8 @@ elif menu == "Input Data":
 
     SVCS = [
         {"label_ui": "Normal 3 Jam", "cost": 0, "normalized": "Normal"},
-        {"label_ui": "Super Kilat Member — Rp. 15.000", "cost": 15000, "normalized": "Super Kilat"},
-        {"label_ui": "Super Kilat Non Member — Rp. 18.000", "cost": 18000, "normalized": "Super Kilat"},
+        {"label_ui": "Express Member — Rp. 15.000", "cost": 15000, "normalized": "Express"},
+        {"label_ui": "Express Non Member — Rp. 18.000", "cost": 18000, "normalized": "Express"},
     ]
     SVC_BY_LABEL = {s["label_ui"]: s for s in SVCS}
 
@@ -481,9 +481,9 @@ elif menu == "Input Data":
     lay = st.selectbox("Jenis Layanan Transfer", [s["label_ui"] for s in SVCS])
     svc = SVC_BY_LABEL[lay]
 
-    if "Super Kilat" in lay:
+    if "Express" in lay:
         with st.form(key="form_super"):
-            st.markdown("### ⚡ Mode: Super Kilat")
+            st.markdown("### ⚡ Mode: Express")
 
             nama = st.text_input("Nama Nasabah")
             kategori = st.selectbox("Kategori Nasabah", ["Langganan", "Baru"])
@@ -561,7 +561,10 @@ elif menu == "Input Data":
                 biaya_detail.append((opt["label"], val))
 
             biaya_super_kilat = svc["cost"]
-            biaya_layanan_total = biaya_layanan_input + biaya_super_kilat
+
+            biaya_baru = 10_000 if kategori == "Baru" else 0
+
+            biaya_layanan_total = biaya_layanan_input + biaya_super_kilat + biaya_baru
 
             st.markdown("---")
 
