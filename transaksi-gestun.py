@@ -478,6 +478,9 @@ elif menu == "Input Data":
 
     st.subheader("🧾 Data Transaksi")
     transaksi_no = st.number_input("No. Transaksi", min_value=1, step=1, format="%d")
+
+    metode_transaksi = st.selectbox("Metode Transaksi", ["Konven", "Online"], key="metode_transaksi_inputdata")
+
     lay = st.selectbox("Jenis Layanan Transfer", [s["label_ui"] for s in SVCS])
     svc = SVC_BY_LABEL[lay]
 
@@ -615,7 +618,7 @@ elif menu == "Input Data":
                     biaya_lines = "• (Tidak ada biaya tambahan)"
 
                 teks_output = f"""
-TRANSAKSI NO. {transaksi_no}
+TRANSAKSI NO. {transaksi_no} ({metode_transaksi.upper()})
 EXPRESS
 
 • Nama Nasabah : {nama}
@@ -806,7 +809,7 @@ Estimasi Selesai: {waktu_selesai}
 
             if st.button("Generate WhatsApp Text"):
                 teks_output = f"""
-*TRANSAKSI NO. {transaksi_no}*
+*TRANSAKSI NO. {transaksi_no} ({metode_transaksi.upper()})*
 _______________________________
 • Nama Nasabah : {nama}
 • Kategori Nasabah : {jenis} ({kelas})
