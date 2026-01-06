@@ -643,8 +643,7 @@ Estimasi Selesai: {waktu_selesai}
 
         with tab2:
             st.subheader("💳 Detail Transaksi")
-
-            media = st.selectbox("Jenis Media Pencairan", [
+            LIST_MEDIA = [
                 "Mesin EDC - BNI Blurry Fashion Store",
                 "Mesin EDC - BRI Abadi Cell Sersan",
                 "Mesin EDC - BCA Abadi Fashion Malang",
@@ -657,11 +656,22 @@ Estimasi Selesai: {waktu_selesai}
                 "QRIS Statis - BNI Sinar Elektronik Store",
                 "QRIS Statis - BRI Vilan Fashion",
                 "QRIS Statis - BRI Abadi Cell",
-                "Quickbill - Phonefoyer",
-            ])
-
+                "Paper Id X Blibli - Kreasi Mode",
+                "Paper Id X Blibli - Happy Fashion",
+                "Paper Id - Kreasi Mode",
+                "Paper Id - Happy Fashion",
+                "Quickbill WL - Phonefoyer",
+                "Quickbill  - Phonefoyer",
+                "Lainnya / Custom"
+            ]
+            pilihan_media = st.selectbox("Jenis Media Pencairan", LIST_MEDIA)
+            if pilihan_media == "Lainnya / Custom":
+                media_custom = st.text_input("Tulis Nama Media Pencairan", placeholder="Contoh: EDC Mandiri - Toko Baru")
+                media = media_custom 
+            else:
+                media = pilihan_media
             CC_BANKS = [
-                "CC - BCA", "CC - Mandiri", "CC - BNI", "CC - BRI", "CC - BTN",
+                "CC - BCA", "CC - Mandiri", "CC - BNI", "CC - BRI", "CC - BSI", "CC - BTN",
                 "CC - CIMB Niaga", "CC - Danamon", "CC - PermataBank", "CC - Mega",
                 "CC - Maybank", "CC - OCBC NISP", "CC - UOB", "CC - HSBC",
                 "CC - DBS", "CC - Standard Chartered", "CC - PaninBank",
