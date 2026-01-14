@@ -618,13 +618,13 @@ elif menu == "Input Data":
                     biaya_lines = "• (Tidak ada biaya tambahan)"
 
                 teks_output = f"""
-TRANSAKSI NO. {transaksi_no} ({metode_transaksi.upper()})
-EXPRESS
+*TRANSAKSI NO. {transaksi_no} ({metode_transaksi.upper()})*
+*EXPRESS*
 
-• Nama Nasabah : {nama}
-• Kategori Nasabah : {kategori}
-• Kelas Nasabah : {kelas}
-• Rate Jual : {rate_jual:.2f}%
+• Nama Nasabah : *{nama}*
+• Kategori Nasabah : *{kategori}*
+• Kelas Nasabah : *{kelas}*
+• Rate Jual : *{rate_jual:.2f}%*
 • Jumlah Transfer : *{trf_fmt}*
 _______________________________
 Estimasi Selesai: {waktu_selesai}
