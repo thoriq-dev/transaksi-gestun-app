@@ -393,7 +393,6 @@ elif menu == "Input Data":
 
     st.title("Form Input Data Transaksi")
 
-    # Konfigurasi Layanan
     SVCS = [
         {"label_ui": "Normal 3 Jam", "cost": 0},
         {"label_ui": "Express Member — Rp. 15.000", "cost": 15000},
@@ -401,7 +400,6 @@ elif menu == "Input Data":
     ]
     SVC_BY_LABEL = {s["label_ui"]: s for s in SVCS}
 
-    # --- Header Input ---
     st.subheader("🧾 Data Transaksi Utama")
     col_h1, col_h2, col_h3 = st.columns(3)
     with col_h1:
@@ -413,9 +411,6 @@ elif menu == "Input Data":
     
     svc = SVC_BY_LABEL[lay]
 
-    # =============================================
-    # MODE 1: EXPRESS
-    # =============================================
     if "Express" in lay:
         st.info("⚡ **Mode: Express Aktif**")
         with st.form(key="form_express_final"):
@@ -454,7 +449,6 @@ elif menu == "Input Data":
             else:
                 trf = st.number_input("Jumlah Transfer (Rp)", min_value=0, step=100000)
                 if fee_type == "Persentase (%)":
-                    # LOGIK FIX: Gunakan int() agar tidak selisih 1 perak
                     jt_final = int((trf + total_biaya) / (1 - fee_decimal))
                     fee_jasa = round(jt_final * fee_decimal)
                 else:
@@ -480,9 +474,6 @@ _______________________________
 Estimasi Selesai: {waktu_selesai}"""
                 st.code(teks_express, language="text")
 
-    # =============================================
-    # MODE 2: NORMAL 3 JAM
-    # =============================================
     else:
         st.markdown("### 🕓 Mode: Normal 3 Jam")
         tab1, tab2, tab3 = st.tabs(["🧍 Data Nasabah", "💳 Detail Transaksi", "💰 Biaya & Hasil"])
@@ -547,7 +538,6 @@ Estimasi Selesai: {waktu_selesai}"""
             else:
                 trf = st.number_input("Jumlah Transfer (Rp)", min_value=0, step=100000)
                 if rt_type == "Persentase (%)":
-                    # LOGIK FIX: Gunakan int() agar tidak selisih 1 perak
                     jt_final = int((trf + total_biaya) / (1 - rate_decimal)) + 1
                     fee_jasa = round(jt_final * rate_decimal) 
                 else:
