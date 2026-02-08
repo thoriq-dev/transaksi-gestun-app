@@ -382,21 +382,22 @@ if menu == "Konven":
         st.info("💡 Masukkan nominal untuk melihat perbandingan secara real-time.")
 
 # =============================================
-# MENU 2: INPUT DATA TRANSAKSI (FULL FINAL VERSION)
+# MENU 2: INPUT DATA TRANSAKSI
 # =============================================
 elif menu == "Input Data":
+    import math
     from datetime import datetime, timedelta
     from zoneinfo import ZoneInfo
 
     def format_rupiah(angka):
-        return f"Rp {int(angka):,}".replace(",", ".")
+        return f"Rp {int(round(angka)):,}".replace(",", ".")
 
     st.title("Form Input Data Transaksi")
 
     SVCS = [
-        {"label_ui": "Normal 3 Jam", "cost": 0},
-        {"label_ui": "Express Member — Rp. 15.000", "cost": 15000},
-        {"label_ui": "Express Non Member — Rp. 18.000", "cost": 18000},
+        {"label_ui": "Normal 3 Jam", "cost": 0.0},
+        {"label_ui": "Express Member — Rp. 15.000", "cost": 15000.0},
+        {"label_ui": "Express Non Member — Rp. 18.000", "cost": 18000.0},
     ]
     SVC_BY_LABEL = {s["label_ui"]: s for s in SVCS}
 
@@ -411,9 +412,12 @@ elif menu == "Input Data":
     
     svc = SVC_BY_LABEL[lay]
 
+    # =============================================
+    # MODE 1: EXPRESS
+    # =============================================
     if "Express" in lay:
         st.info("⚡ **Mode: Express Aktif**")
-        with st.form(key="form_express_final"):
+        with st.form(key="form_express_sync_fixed"):
             c1, c2, c3 = st.columns(3)
             nama = c1.text_input("Nama Nasabah")
             kategori = c2.selectbox("Kategori Nasabah", ["Langganan", "Baru"])
@@ -424,45 +428,42 @@ elif menu == "Input Data":
             fee_type = m2.selectbox("Jenis Fee", ["Persentase (%)", "Flat (Rp)"])
             
             if fee_type == "Persentase (%)":
-                fee_persen = m3.number_input("Fee (%)", min_value=2, step=0.1, format="%.2f")
-                fee_decimal = fee_persen / 100
-                fee_flat = 0
+                fee_persen = m3.number_input("Fee (%)", min_value=0.0, step=0.1, format="%.2f", value=0.0)
+                fee_decimal = fee_persen / 100.0
             else:
-                fee_flat = m3.number_input("Fee Flat (Rp)", min_value=0, step=1000)
-                fee_decimal = 0
-                fee_persen = 0
+                fee_flat = m3.number_input("Fee Flat (Rp)", min_value=0.0, step=1000.0, value=0.0)
+                fee_decimal = 0.0
 
             st.markdown("### 💰 Biaya Tambahan")
             b1, b2, b3 = st.columns(3)
-            b_trf = b1.number_input("B. Transfer Non-BCA", min_value=0, step=10000)
-            b_edc = b2.number_input("B. EDC", min_value=0, step=2000)
-            b_qris = b3.number_input("B. QRIS WA", min_value=0, step=3000)
+            b_trf = b1.number_input("B. Transfer Non-BCA", min_value=0.0, step=2500.0, value=0.0)
+            b_edc = b2.number_input("B. Transaksi Mesin EDC", min_value=0.0, step=2000.0, value=0.0)
+            b_qris = b3.number_input("B. QRIS By WA", min_value=0.0, step=3000.0, value=0.0)
             
-            biaya_baru = 10000 if kategori == "Baru" else 0
+            label_input = "Jumlah Transaksi (Gesek)" if metode_gesek == "Gesek Kotor" else "Jumlah Transfer (Terima)"
+            input_nominal = st.number_input(label_input, min_value=0.0, step=50000.0, value=0.0)
+
+            submit_express = st.form_submit_button("Generate WhatsApp Express")
+            
+        if submit_express:
+            biaya_baru = 10000.0 if kategori == "Baru" else 0.0
             total_biaya = b_trf + b_edc + b_qris + biaya_baru + svc["cost"]
 
             if metode_gesek == "Gesek Kotor":
-                jt = st.number_input("Jumlah Transaksi (Rp)", min_value=0, step=100000)
-                fee_jasa = round(jt * fee_decimal) if fee_type == "Persentase (%)" else fee_flat
-                trf_final = jt - fee_jasa - total_biaya
-                jt_final = jt
-            else:
-                trf = st.number_input("Jumlah Transfer (Rp)", min_value=0, step=100000)
-                if fee_type == "Persentase (%)":
-                    jt_final = int((trf + total_biaya) / (1 - fee_decimal))
-                    fee_jasa = round(jt_final * fee_decimal)
-                else:
-                    jt_final = trf + total_biaya + fee_flat
-                    fee_jasa = fee_flat
+                jt_final = input_nominal
+                fee_jasa = round(jt_final * fee_decimal) if fee_type == "Persentase (%)" else fee_flat
                 trf_final = jt_final - fee_jasa - total_biaya
+            else:
+                if fee_type == "Persentase (%)":
+                    jt_final = math.ceil((input_nominal + total_biaya) / (1.0 - fee_decimal))
+                else:
+                    jt_final = input_nominal + total_biaya + fee_flat
+                trf_final = input_nominal
 
-            st.write(f"Preview: Transaksi {format_rupiah(jt_final)} | Transfer {format_rupiah(trf_final)}")
+            waktu_selesai = (datetime.now(ZoneInfo("Asia/Jakarta")) + timedelta(minutes=20)).strftime("%H:%M WIB")
+            rate_tampil = f"{fee_persen:.2f}%" if fee_type == "Persentase (%)" else format_rupiah(fee_flat)
             
-            if st.form_submit_button("Generate WhatsApp Express"):
-                waktu_selesai = (datetime.now(ZoneInfo("Asia/Jakarta")) + timedelta(minutes=20)).strftime("%H:%M WIB")
-                rate_tampil = f"{fee_persen:.2f}%" if fee_type == "Persentase (%)" else format_rupiah(fee_flat)
-                
-                teks_express = f"""*TRANSAKSI NO. {transaksi_no} ({metode_transaksi.upper()})*
+            teks_express = f"""*TRANSAKSI NO. {transaksi_no} ({metode_transaksi.upper()})*
 *EXPRESS*
 
 • Nama Nasabah : *{nama}*
@@ -472,104 +473,94 @@ elif menu == "Input Data":
 • Jumlah Transfer : *{format_rupiah(trf_final)}*
 _______________________________
 Estimasi Selesai: {waktu_selesai}"""
-                st.code(teks_express, language="text")
+            st.code(teks_express, language="text")
 
+    # =============================================
+    # MODE 2: NORMAL 3 JAM
+    # =============================================
     else:
         st.markdown("### 🕓 Mode: Normal 3 Jam")
         tab1, tab2, tab3 = st.tabs(["🧍 Data Nasabah", "💳 Detail Transaksi", "💰 Biaya & Hasil"])
 
         with tab1:
             c1, c2, c3 = st.columns(3)
-            nama = c1.text_input("Nama Nasabah", key="n_norm")
-            jenis = c2.selectbox("Kategori Nasabah", ["Langganan", "Baru"], key="k_norm")
+            nama_n = c1.text_input("Nama Nasabah", key="n_norm")
+            jenis_n = c2.selectbox("Kategori Nasabah", ["Langganan", "Baru"], key="k_norm")
             kelas_n = c3.selectbox("Kelas Nasabah", ["Non Member", "Gold", "Platinum", "Prioritas", "Silver"], key="kls_norm")
 
         with tab2:
             media = st.selectbox("Jenis Media Pencairan", [
-                "Mesin EDC - BNI Blurry Fashion Store", 
-                "Mesin EDC - BCA Cozy Fashion", 
-                "QRIS Statis - BNI Indah Mebeul", 
-                "QRIS Statis - BNI Bahagia Roastery", 
-                "QRIS Statis - BNI Toko Jaya Grosir", 
-                "QRIS Statis - BNI Sinar Elektronik Store", 
-                "QRIS Statis - BNI Bajuri Bike Center", 
-                "QRIS Statis - BNI Bajuri Cel Fashion", 
-                "QRIS Statis - BNI Bajuri Nada Collection Clothing", 
-                "QRIS Statis - BNI Bajuri Nugraha Clothes", 
-                "QRIS Statis - BNI Bajuri Syifa Boutique", 
-                "QRIS Statis - BNI Wild And Fashion Store", 
-                "Paper Id x Blibli - Kreasi Mode", 
-                "Paper Id x Blibli - Happy Fashion", 
-                "Paper Id - Kreasi Mode", 
-                "Paper Id - Happy Fashion", 
-                "Quickbill - PhoneFoyer",
-                "Quickbill WL - PhoneFoyer"
+                "Mesin EDC - BNI Blurry Fashion Store", "Mesin EDC - BRI Abadi Cell Sersan", 
+                "Mesin EDC - BCA Abadi Fashion Malang", "QRIS Statis - BNI Indah Mebeul", "Paper Id - Kreasi Mode", "Lainnya"
             ])
             produk = st.text_input("Produk", placeholder="Contoh: Kartu Kredit - BANK BNI")
             
             r1, r2, r3 = st.columns([2, 1, 1])
             rt_type = r1.radio("Tipe Rate Jual", ["Persentase (%)", "Nominal (Rp)"], horizontal=True)
             if rt_type == "Persentase (%)":
-                rt_val = r2.number_input("Rate Jual (%)", min_value=2.0, step=0.1, format="%.2f")
-                rate_decimal = rt_val / 100
+                rt_val = r2.number_input("Rate Jual (%)", min_value=0.0, step=0.1, format="%.2f", value=0.0)
+                rate_decimal = rt_val / 100.0
                 rt_str = f"{rt_val:.2f}%"
             else:
-                rt_nom = r2.number_input("Rate Jual (Rp)", min_value=35000, step=35000)
-                rate_decimal = 0
+                rt_nom = r2.number_input("Rate Jual (Rp)", min_value=0.0, step=1000.0, value=0.0)
+                rate_decimal = 0.0
                 rt_str = format_rupiah(rt_nom)
             
-            mdr_percent = r3.number_input("Rate MDR (%)", min_value=0.0, step=0.1, format="%.2f")
+            mdr_percent = r3.number_input("Rate MDR (%)", min_value=0.0, step=0.1, format="%.2f", value=0.0)
 
         with tab3:
             m_gestun = st.radio("Metode Gestun", ["Kotor", "Bersih"], horizontal=True)
             b1, b2, b3 = st.columns(3)
-            biaya_transfer = b1.number_input("Biaya Transfer Selain BCA", min_value=0, step=10000)
-            biaya_edc = b2.number_input("Biaya Transaksi EDC", min_value=0, step=2000)
-            biaya_qris = b3.number_input("Biaya QRIS WA", min_value=0, step=3000)
+            biaya_transfer = b1.number_input("Biaya Transfer Selain BCA", min_value=0.0, step=2500.0, value=0.0)
+            biaya_edc = b2.number_input("Biaya Transaksi EDC", min_value=0.0, step=2000.0, value=0.0)
+            biaya_qris = b3.number_input("Biaya QRIS By WA", min_value=0.0, step=3000.0, value=0.0)
             
-            biaya_baru = 10000 if jenis == "Baru" else 0
-            total_biaya = biaya_transfer + biaya_edc + biaya_qris + biaya_baru
+            biaya_baru_n = 10000.0 if jenis_n == "Baru" else 0.0
+            total_biaya_n = biaya_transfer + biaya_edc + biaya_qris + biaya_baru_n
 
             if m_gestun == "Kotor":
-                jt = st.number_input("Jumlah Transaksi (Rp)", min_value=0, step=100000)
-                fee_jasa = round(jt * rate_decimal) if rt_type == "Persentase (%)" else rt_nom
-                trf_final = jt - fee_jasa - total_biaya
-                jt_final = jt 
+                input_jt = st.number_input("Jumlah Transaksi (Rp)", min_value=0.0, step=100000.0, value=0.0)
+                fee_jasa_n = round(input_jt * rate_decimal) if rt_type == "Persentase (%)" else rt_nom
+                jt_final_n = input_jt
+                trf_final_n = jt_final_n - fee_jasa_n - total_biaya_n
             else:
-                trf = st.number_input("Jumlah Transfer (Rp)", min_value=0, step=100000)
+                input_trf = st.number_input("Jumlah Transfer (Rp)", min_value=0.0, step=100000.0, value=0.0)
                 if rt_type == "Persentase (%)":
-                    jt_final = int((trf + total_biaya) / (1 - rate_decimal)) + 1
-                    fee_jasa = round(jt_final * rate_decimal) 
+                    jt_final_n = math.ceil((input_trf + total_biaya_n) / (1.0 - rate_decimal))
                 else:
-                    jt_final = trf + total_biaya + rt_nom
-                    fee_jasa = rt_nom
-                trf_final = jt_final - fee_jasa - total_biaya - 1
+                    jt_final_n = input_trf + total_biaya_n + rt_nom
+                trf_final_n = input_trf
 
             st.divider()
             p1, p2 = st.columns(2)
             petugas_nama = p1.text_input("Nama Petugas", value="Thoriq")
-            petugas_shift = p2.selectbox("Shift Kerja", ["1 Shift", "Pagi", "Siang", "Malam"])
+            petugas_shift = p2.selectbox("Shift Kerja", ["1 Shift", "Shift Pagi", "Shift Siang", "Shift Malam"])
 
-            if st.button("Generate WhatsApp Text"):
-                waktu_selesai = (datetime.now(ZoneInfo("Asia/Jakarta")) + timedelta(hours=3)).strftime("%H:%M WIB")
-                ru_val = (rt_val - mdr_percent) if rt_type == "Persentase (%)" else 0 # Simple logic untung
+            if st.button("Generate WhatsApp Normal"):
+                waktu_selesai_n = (datetime.now(ZoneInfo("Asia/Jakarta")) + timedelta(hours=3)).strftime("%H:%M WIB")
                 
+                if rt_type == "Persentase (%)":
+                    ru_str = f"{(rt_val - mdr_percent):.2f}%"
+                else:
+                    mdr_rp = jt_final_n * (mdr_percent / 100.0)
+                    ru_str = format_rupiah(rt_nom - mdr_rp)
+
                 teks_normal = f"""*TRANSAKSI NO. {transaksi_no} ({metode_transaksi.upper()})*
 _______________________________
-• Nama Nasabah : {nama}
-• Kategori Nasabah : {jenis} ({kelas_n})
+• Nama Nasabah : {nama_n}
+• Kategori Nasabah : {jenis_n} ({kelas_n})
 • Jenis Media Pencairan : {media}
 • Produk : {produk}
 • Rate Jual : {rt_str}
-• Rate Untung : {ru_val:.2f}%
-• Nominal Transaksi : *{format_rupiah(jt_final)}*
-• Biaya Nasabah Baru : Rp. {biaya_baru:,}
-• Biaya Transfer Selain BCA : Rp. {biaya_transfer:,}
-• Biaya Transaksi di Mesin EDC : Rp. {biaya_edc:,}
-• Biaya Layanan QRIS By WhatsApp : Rp. {biaya_qris:,}
+• Rate Untung : {ru_str}
+• Nominal Transaksi : *{format_rupiah(jt_final_n)}*
+• Biaya Nasabah Baru : Rp. {int(biaya_baru_n):,}
+• Biaya Transfer Selain BCA : Rp. {int(biaya_transfer):,}
+• Biaya Transaksi di Mesin EDC : Rp. {int(biaya_edc):,}
+• Biaya Layanan QRIS By WhatsApp : Rp. {int(biaya_qris):,}
 _______________________________
-Jumlah Transfer : *{format_rupiah(trf_final)}*
-🕓 Estimasi Selesai: {waktu_selesai}
+Jumlah Transfer : *{format_rupiah(trf_final_n)}*
+🕓 Estimasi Selesai: {waktu_selesai_n}
 
 Petugas: {petugas_nama} ({petugas_shift})"""
                 st.code(teks_normal, language="text")
