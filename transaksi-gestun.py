@@ -490,8 +490,24 @@ Estimasi Selesai: {waktu_selesai}"""
 
         with tab2:
             media = st.selectbox("Jenis Media Pencairan", [
-                "Mesin EDC - BNI Blurry Fashion Store", "Mesin EDC - BRI Abadi Cell Sersan", 
-                "Mesin EDC - BCA Abadi Fashion Malang", "QRIS Statis - BNI Indah Mebeul", "Paper Id - Kreasi Mode", "Lainnya"
+                "Mesin EDC - BNI Blurry Fashion Store", 
+                "Mesin EDC - BCA Cozy Fashion", 
+                "QRIS Statis - BNI Indah Mebeul", 
+                "QRIS Statis - BNI Bahagia Roastery", 
+                "QRIS Statis - BNI Toko Jaya Grosir", 
+                "QRIS Statis - BNI Sinar Elektronik Store", 
+                "QRIS Statis - BNI Bajuri Bike Center", 
+                "QRIS Statis - BNI Cel Fashion", 
+                "QRIS Statis - BNI Nada Collection Clothing", 
+                "QRIS Statis - BNI Nugraha Clothes", 
+                "QRIS Statis - BNI Syifa Boutique", 
+                "QRIS Statis - BNI Wild And Fashion", 
+                "Paper Id X Blibli - Kreasi Mode", 
+                "Paper Id X Blibli - Happy Mode", 
+                "Quickbill WL - Phone Foyer", 
+                "Quickbill - Phone Foyer", 
+                "Paper Id - Kreasi Mode", 
+                "Paper Id - Happy Mode",   
             ])
             produk = st.text_input("Produk", placeholder="Contoh: Kartu Kredit - BANK BNI")
             
