@@ -436,7 +436,7 @@ elif menu == "Input Data":
 
             st.markdown("### 💰 Biaya Tambahan")
             b1, b2, b3 = st.columns(3)
-            b_trf = b1.number_input("B. Transfer Non-BCA", min_value=0.0, step=2500.0, value=0.0)
+            b_trf = b1.number_input("B. Transfer Non-BCA", min_value=0.0, step=10000.0, value=0.0)
             b_edc = b2.number_input("B. Transaksi Mesin EDC", min_value=0.0, step=2000.0, value=0.0)
             b_qris = b3.number_input("B. QRIS By WA", min_value=0.0, step=3000.0, value=0.0)
             
@@ -527,7 +527,7 @@ Estimasi Selesai: {waktu_selesai}"""
         with tab3:
             m_gestun = st.radio("Metode Gestun", ["Kotor", "Bersih"], horizontal=True)
             b1, b2, b3 = st.columns(3)
-            biaya_transfer = b1.number_input("Biaya Transfer Selain BCA", min_value=0.0, step=2500.0, value=0.0)
+            biaya_transfer = b1.number_input("Biaya Transfer Selain BCA", min_value=0.0, step=10000.0, value=0.0)
             biaya_edc = b2.number_input("Biaya Transaksi EDC", min_value=0.0, step=2000.0, value=0.0)
             biaya_qris = b3.number_input("Biaya QRIS By WA", min_value=0.0, step=3000.0, value=0.0)
             
