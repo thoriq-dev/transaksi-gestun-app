@@ -244,8 +244,8 @@ def menu_pembagian_edc():
                 "📥 Download CSV", df.to_csv(index=False).encode(), "split_plan.csv", "text/csv"
             )
 menu = st.sidebar.selectbox("Pilih Menu", [
-    "Konven",
     "Input Data",
+    "Konven",
     "Marketplace",
     "Countdown",
     "Proporsional",
