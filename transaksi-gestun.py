@@ -549,7 +549,7 @@ Estimasi Selesai: {waktu_selesai}"""
 
             st.divider()
             p1, p2 = st.columns(2)
-            petugas_nama = p1.text_input("Nama Petugas", value="Thoriq")
+            petugas_nama = p1.selectbox("Nama Petugas", ["Rendy (Training)", "Thoriq"])
             petugas_shift = p2.selectbox("Shift Kerja", ["1 Shift", "Shift Pagi", "Shift Siang", "Shift Malam"])
 
             if st.button("Generate WhatsApp Normal"):
