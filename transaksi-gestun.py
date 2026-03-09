@@ -508,6 +508,7 @@ Estimasi Selesai: {waktu_selesai}"""
                 "Quickbill - Phone Foyer", 
                 "Paper Id - Kreasi Mode", 
                 "Paper Id - Happy Mode",   
+                "Evermoss - Luxe Fashion",   
             ])
             produk = st.text_input("Produk", placeholder="Contoh: Kartu Kredit - BANK BNI")
             
