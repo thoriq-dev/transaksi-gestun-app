@@ -323,7 +323,6 @@ if menu == "Konven":
         EXTRA_FEE_BERSIH = 1 
         waktu_sekarang = datetime.now(ZoneInfo("Asia/Jakarta"))
         
-        # PERBAIKAN: Menggunakan operator 'in' untuk mengecek kata "Express"
         if "Express" in svc["normalized"]:
             durasi = timedelta(minutes=30)
         else:
@@ -377,7 +376,7 @@ if menu == "Konven":
             st.success(f"✅ **Dana Masuk:** {est_selesai} WIB")
             
         # =========================================================
-        # IDE BARU: Bagian Transparansi Rincian (Default Tertutup)
+        # Bagian Transparansi Rincian
         # =========================================================
         st.write("") # Memberi sedikit jarak
         with st.expander("🔎 Rincian Transparansi Biaya (Opsional)", expanded=False):
@@ -399,6 +398,7 @@ if menu == "Konven":
                 
             st.markdown("---")
             st.markdown(f"**Total Penyesuaian (Metode Kotor):** `{format_rupiah(total_potongan_kotor)}`")
+            st.markdown(f"**Total Penyesuaian (Metode Bersih):** `{format_rupiah(total_biaya_bersih)}`")
             
     else:
         st.info("💡 Masukkan nominal untuk melihat perbandingan secara real-time.")
