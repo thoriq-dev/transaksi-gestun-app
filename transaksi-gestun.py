@@ -322,7 +322,13 @@ if menu == "Konven":
     if nominal_int > 0:
         EXTRA_FEE_BERSIH = 1 
         waktu_sekarang = datetime.now(ZoneInfo("Asia/Jakarta"))
-        durasi = timedelta(minutes=30) if svc["normalized"] == "Express" else timedelta(hours=3)
+        
+        # PERBAIKAN: Menggunakan operator 'in' untuk mengecek kata "Express"
+        if "Express" in svc["normalized"]:
+            durasi = timedelta(minutes=30)
+        else:
+            durasi = timedelta(hours=3)
+            
         est_selesai = estimasi_selesai(waktu_sekarang, durasi)
         
         if tipe_rate == "Persentase (%)":
@@ -341,8 +347,7 @@ if menu == "Konven":
             <div style="background:#fff4f4; border:1px solid #feb2b2; padding:20px; border-radius:15px; text-align:center;">
                 <p style="color:#c53030; margin:0; font-size:0.9rem; font-weight:bold;">METODE GESEK KOTOR</p>
                 <h2 style="margin:10px 0; color:#c53030;">{format_rupiah(max(0, k_terima))}</h2>
-                <p style="color:#e53e3e; margin:0; font-size:0.85rem;">Potongan: {format_rupiah(total_potongan_kotor)}</p>
-                <small style="color:#718096;">Dana yang Anda Terima</small>
+                <small style="color:#718096;">Dana Bersih yang Kakak/Bapak/Ibu Terima</small>
             </div>
             """, unsafe_allow_html=True)
 
@@ -351,25 +356,18 @@ if menu == "Konven":
             st.markdown(f"""
             <div style="background:#f0fff4; border:1px solid #9ae6b4; padding:20px; border-radius:15px; text-align:center;">
                 <p style="color:#2f855a; margin:0; font-size:0.9rem; font-weight:bold;">METODE GESEK BERSIH</p>
-                <h2 style="margin:10px 0; color:#2f855a;">{format_rupiah(b_transaksi)}</h2>
-                <p style="color:#38a169; margin:0; font-size:0.85rem;">Total Fee: {format_rupiah(total_biaya_bersih)}</p>
-                <small style="color:#718096;">Nominal Harus Digesek</small>
+                <h2 style="margin:10px 0; color:#2f855a;">{format_rupiah(b_transaksi + EXTRA_FEE_BERSIH)}</h2>
+                <small style="color:#718096;">Nominal yang Harus Digesek</small>
             </div>
             """, unsafe_allow_html=True)
 
-        with st.expander("🔍 Lihat Rincian Biaya Tambahan", expanded=True):
-            rincian_data = []
-            if svc["cost"] > 0:
-                rincian_data.append({"Komponen": "Layanan Transfer", "Biaya": format_rupiah(svc["cost"])})
-            for b in biaya_pilihan:
-                rincian_data.append({"Komponen": b, "Biaya": format_rupiah(BIAYA_TAMBAHAN_LIST[b])})
+        with st.expander("🧾 Rangkuman Transaksi", expanded=True):
+            st.write("Terima kasih Kakak/Bapak/Ibu! Berikut adalah rangkuman transaksinya. Semua komponen biaya sudah kami gabungkan menjadi satu agar lebih praktis.")
             
-            if rincian_data:
-                df_rincian = pd.DataFrame(rincian_data)
-                st.table(df_rincian)
-                st.markdown(f"**Total Potongan Tambahan: {format_rupiah(biaya_total)}**")
-            else:
-                st.write("Tidak ada biaya tambahan selain rate jasa.")
+            if total_potongan_kotor > 0 or total_biaya_bersih > 0:
+                st.info(f"💡 **Total Penyesuaian Layanan & Admin:**\n- **{format_rupiah(total_potongan_kotor)}** (jika pilih Metode Kotor)\n- **{format_rupiah(total_biaya_bersih)}** (jika pilih Metode Bersih)")
+                
+            st.caption("*Tidak ada biaya tambahan atau potongan tersembunyi lainnya di luar nominal penyesuaian di atas.*")
 
         st.divider()
         c1, c2 = st.columns(2)
@@ -377,6 +375,30 @@ if menu == "Konven":
             st.warning(f"✅ **Waktu Pembelian:** {waktu_sekarang.strftime('%H:%M')} WIB")
         with c2:
             st.success(f"✅ **Dana Masuk:** {est_selesai} WIB")
+            
+        # =========================================================
+        # IDE BARU: Bagian Transparansi Rincian (Default Tertutup)
+        # =========================================================
+        st.write("") # Memberi sedikit jarak
+        with st.expander("🔎 Rincian Transparansi Biaya (Opsional)", expanded=False):
+            st.markdown("Sebagai bentuk transparansi layanan kami, berikut adalah rincian kalkulasi sistem jika Kakak/Bapak/Ibu membutuhkannya:")
+            
+            # Membuat list rincian
+            st.markdown(f"- **Nominal Transaksi Dasar:** `{format_rupiah(nominal_int)}`")
+            
+            if tipe_rate == "Persentase (%)":
+                st.markdown(f"- **Jasa Layanan ({rt_str}):** `{format_rupiah(k_fee)}`")
+            else:
+                st.markdown(f"- **Jasa Layanan (Nominal):** `{format_rupiah(nominal_rate)}`")
+            
+            if svc["cost"] > 0:
+                st.markdown(f"- **Biaya Admin ({svc['normalized']}):** `{format_rupiah(svc['cost'])}`")
+                
+            for b in biaya_pilihan:
+                st.markdown(f"- **{b}:** `{format_rupiah(BIAYA_TAMBAHAN_LIST[b])}`")
+                
+            st.markdown("---")
+            st.markdown(f"**Total Penyesuaian (Metode Kotor):** `{format_rupiah(total_potongan_kotor)}`")
             
     else:
         st.info("💡 Masukkan nominal untuk melihat perbandingan secara real-time.")
