@@ -572,8 +572,8 @@ Estimasi Selesai: {waktu_selesai}"""
 
             st.divider()
             p1, p2 = st.columns(2)
-            petugas_nama = p1.selectbox("Nama Petugas", ["Rendy (Training)", "Thoriq"])
-            petugas_shift = p2.selectbox("Shift Kerja", ["1 Shift", "Shift Pagi", "Shift Siang", "Shift Malam"])
+            petugas_nama = p1.selectbox("Nama Petugas", ["Rendy", "Thoriq"])
+            petugas_shift = p2.selectbox("Shift Kerja", ["Shift Pagi", "Shift Siang", "Shift Malam", "1 Shift"])
 
             if st.button("Generate WhatsApp Normal"):
                 waktu_selesai_n = (datetime.now(ZoneInfo("Asia/Jakarta")) + timedelta(hours=3)).strftime("%H:%M WIB")
