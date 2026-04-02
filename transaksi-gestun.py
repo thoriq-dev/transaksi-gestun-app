@@ -297,9 +297,11 @@ if menu == "Konven":
     BIAYA_TAMBAHAN_LIST = {
         "Biaya Transaksi di Mesin EDC": 2_000,
         "Biaya QRIS By Whatsapp": 3_000,
+        "Biaya Layanan Online Invoice CC Pusat (Non Blibli)": 3_000,
         "Biaya Administrasi Nasabah Baru": 10_000,
         "Biaya Transfer Beda Bank": 10_000,
         "Biaya Layanan Link Toko Tokopedia": 10_000,
+        "Biaya Layanan Express Online Invoice": 25_000,
         "Biaya Layanan Express Tokopedia": 30_000,
         "Biaya Layanan Express Shopee": 30_000,
     }
