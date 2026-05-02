@@ -526,6 +526,9 @@ Estimasi Selesai: {waktu_selesai}"""
                 "QRIS Statis - BNI Nugraha Clothes", 
                 "QRIS Statis - BNI Syifa Boutique", 
                 "QRIS Statis - BNI Wild And Fashion", 
+                "QRIS Dinamis - Giga Cell", 
+                "QRIS Dinamis - WR Sembako Annisa", 
+                "QRIS Dinamis - RM Parfume Rahayu", 
                 "Paper Id X Blibli - Kreasi Mode", 
                 "Paper Id X Blibli - Happy Mode", 
                 "Quickbill WL - Phone Foyer", 
@@ -569,7 +572,7 @@ Estimasi Selesai: {waktu_selesai}"""
                 if rt_type == "Persentase (%)":
                     jt_final_n = math.ceil((input_trf + total_biaya_n) / (1.0 - rate_decimal))
                 else:
-                    jt_final_n = input_trf + total_biaya_n + rt_nom
+                    jt_final_n = input_trf + total_biaya_n + rt_nom + 1
                 trf_final_n = input_trf
 
             st.divider()
