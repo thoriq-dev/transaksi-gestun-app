@@ -302,6 +302,8 @@ if menu == "Konven":
         "Biaya Transfer Beda Bank": 10_000,
         "Biaya Layanan Link Toko Tokopedia Non Member": 15_000,
         "Biaya Layanan Link Toko Tokopedia Member": 10_000,
+        "Biaya Layanan Link Toko Shopee Non Member": 10_000,
+        "Biaya Layanan Link Toko Shopee Member": 10_000,
         "Biaya Layanan Express Online Invoice": 25_000,
         "Biaya Layanan Express Tokopedia": 30_000,
         "Biaya Layanan Express Shopee": 30_000,
