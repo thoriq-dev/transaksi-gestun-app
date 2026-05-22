@@ -517,6 +517,7 @@ Estimasi Selesai: {waktu_selesai}"""
 
         with tab2:
             media = st.selectbox("Jenis Media Pencairan", [
+                "Mesin EDC - BRI Real Estate Gemilang", 
                 "Mesin EDC - BNI Blurry Fashion Store", 
                 "Mesin EDC - BCA Cozy Fashion", 
                 "QRIS Statis - BNI Indah Mebeul", 
@@ -528,7 +529,9 @@ Estimasi Selesai: {waktu_selesai}"""
                 "QRIS Statis - BNI Nada Collection Clothing", 
                 "QRIS Statis - BNI Nugraha Clothes", 
                 "QRIS Statis - BNI Syifa Boutique", 
-                "QRIS Statis - BNI Wild And Fashion", 
+                "QRIS Statis - BNI Wild And Fashion",
+                "QRIS Statis - BNI Urban Outfit Fashion",
+                "QRIS Statis - BNI Onpoint Wear",
                 "QRIS Dinamis - Giga Cell", 
                 "QRIS Dinamis - WR Sembako Annisa", 
                 "QRIS Dinamis - RM Parfume Rahayu", 
