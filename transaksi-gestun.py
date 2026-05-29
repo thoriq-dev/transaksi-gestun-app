@@ -644,10 +644,10 @@ elif menu == "Marketplace":
     # --- Fee merchant (opsional) ---
     fee_merchant = st.selectbox(
         "Fee Merchant (%)",
-        ["Tidak Ada", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
+        ["Tidak Ada", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
         index=0
     )
-    fee_gestun = st.selectbox("Fee Gestun (%)", ["Tidak Ada", 8, 9, 10, 11, 12, 13, 14],
+    fee_gestun = st.selectbox("Fee Gestun (%)", ["Tidak Ada", 8, 9, 10, 11, 12, 13, 14, 15, 16],
         index=0
     )
     st.markdown("### ✅ Biaya Tambahan (Checklist sesuai kondisi aktual)")
