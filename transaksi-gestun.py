@@ -119,75 +119,135 @@ def _rand_adjust(val: int, low: int = 237, high: int = 937) -> int:
     high = min(high, max(low + 1, val - 1))
     return RNG.randrange(low, high)
 
+def _water_fill(total: int, swipe_slots: List[Tuple[str, int]]) -> List[int]:
+    """Distribusikan *total* secara proporsional (water-filling).
+    Slot bertarget awal = total/N. Jika ada slot dengan cap < target,
+    isi slot tersebut ke capnya lalu sebarkan sisa ke slot yang tersisa.
+    Menggunakan aritmetika integer agar tidak ada presisi floating-point.
+    """
+    caps      = [cap for _, cap in swipe_slots]
+    targets   = [0] * len(swipe_slots)
+    remaining = total
+    pending   = list(range(len(swipe_slots)))
+
+    while pending:
+        k = len(pending)
+        # caps[i] * k <= remaining  ⟺  caps[i] <= remaining/k  (integer-safe)
+        newly_capped = [i for i in pending if caps[i] * k <= remaining]
+        if newly_capped:
+            for i in newly_capped:
+                targets[i]  = caps[i]
+                remaining  -= caps[i]
+            pending = [i for i in pending if i not in set(newly_capped)]
+        else:
+            # Tidak ada slot yang terkendala kapasitas — bagi rata
+            base  = remaining // k
+            extra = remaining - base * k
+            for rank, i in enumerate(pending):
+                targets[i] = base + (1 if rank < extra else 0)
+            break
+
+    return targets
+
+
 def split_transaction_exact(
     total: int,
     machines: List[Tuple[str, int]],
     max_swipes: int = 2,
 ) -> List[Dict]:
-    """Bagi *total* ke mesin-mesin:
-    - NOMINAL per swipe < limit - SAFETY_GAP
-    - Nominal tidak bulat (non-round)
-    - Maks *max_swipes* per mesin
-    - Total tepat sama dengan *total*
+    """Bagi *total* ke mesin-mesin dengan:
+    - Urutan round-robin: A → B → C → A → B → C → …  (beda bank bergantian)
+    - Nominal per gesek PROPORSIONAL — bukan selalu memaksimalkan limit
+    - Variasi ±5% per gesek agar pola tidak kentara
+    - NOMINAL per gesek < limit − SAFETY_GAP
+    - Maks *max_swipes* gesek per mesin
+    - Total tepat = *total*
     """
-    machines  = sorted(machines, key=lambda x: -x[1])
-    counts    = {m: 0 for m, _ in machines}
+    machines = sorted(machines, key=lambda x: -x[1])
+
+    # ── Slot round-robin penuh: [A,B,C, A,B,C, …] ────────────────────────────
+    all_rr_slots: List[Tuple[str, int]] = [
+        (name, limit - SAFETY_GAP)
+        for _ in range(max_swipes)
+        for name, limit in machines
+    ]
+
+    # ── Pre-check kapasitas ───────────────────────────────────────────────────
+    total_capacity = sum(cap for _, cap in all_rr_slots)
+    if total > total_capacity:
+        detail_lines = "\n".join(
+            f"  • {name}: {max_swipes} × {format_rupiah_rp(limit - SAFETY_GAP)}"
+            f" = {format_rupiah_rp((limit - SAFETY_GAP) * max_swipes)}"
+            for name, limit in machines
+        )
+        raise RuntimeError(
+            f"Total transaksi {format_rupiah_rp(total)} melebihi kapasitas semua mesin.\n\n"
+            f"Kapasitas per mesin ({max_swipes} swipe maks):\n{detail_lines}\n\n"
+            f"Total kapasitas tersedia: {format_rupiah_rp(int(total_capacity))}\n\n"
+            f"Solusi: tambah jumlah mesin, naikkan batas per swipe, atau naikkan max swipe."
+        )
+
+    # ── Pilih jumlah round minimum yang cukup ────────────────────────────────
+    # Cari berapa putaran round-robin terkecil yang total kapasitasnya ≥ total.
+    # Hasilnya: gesek sesedikit mungkin, nominal masing-masing lebih bervarisi.
+    swipe_slots: List[Tuple[str, int]] = all_rr_slots
+    for rounds in range(1, max_swipes + 1):
+        candidate = [
+            (name, limit - SAFETY_GAP)
+            for _ in range(rounds)
+            for name, limit in machines
+        ]
+        if sum(cap for _, cap in candidate) >= total:
+            swipe_slots = candidate
+            break
+
+    # ── Target proporsional via water-filling ────────────────────────────────
+    # Alih-alih memaksimalkan setiap gesek, bagi total secara merata.
+    # Contoh 200 jt / 6 gesek ≈ 33 jt/gesek  vs  lama: 40jt,40jt,40jt,40jt,35jt,5jt
+    base_targets = _water_fill(total, swipe_slots)
+
+    # ── Alokasi dengan variasi ±5% + lookahead ───────────────────────────────
     remaining = total
     parts: List[Dict] = []
 
-    while remaining > 0:
-        progressed = False
-
-        # Coba selesaikan sisa dalam satu swipe
-        for name, limit in machines:
-            if counts[name] < max_swipes and remaining <= limit - SAFETY_GAP:
-                amt = remaining - _rand_adjust(remaining)
-                if amt == 0:
-                    amt = remaining - 777
-                parts.append({"machine": name, "amount": amt})
-                counts[name] += 1
-                remaining   -= amt
-                progressed   = True
-                break
-
-        if remaining == 0:
+    for i, (name, cap) in enumerate(swipe_slots):
+        if remaining <= 0:
             break
-        if progressed:
-            continue
 
-        # Alokasikan sebagian dari mesin yang masih bisa digunakan
-        for name, limit in machines:
-            if counts[name] >= max_swipes:
-                continue
-            base = min(limit - SAFETY_GAP, remaining)
-            amt  = base - _rand_adjust(base)
-            amt  = max(500, amt)
-            parts.append({"machine": name, "amount": amt})
-            counts[name] += 1
-            remaining    -= amt
-            progressed    = True
-            if remaining <= 0:
-                break
+        # Batas minimum/maksimum berdasarkan lookahead
+        future_cap = sum(c for _, c in swipe_slots[i + 1:])
+        must_cover = max(1, remaining - future_cap)
+        can_cover  = min(cap, remaining)
 
-        if not progressed:
-            raise RuntimeError(
-                "Tidak dapat mengalokasikan sisa nominal dengan batas/swipe yang tersedia."
-            )
+        # Terapkan variasi ±5% dari target (minimal ±Rp 100.000)
+        base    = base_targets[i]
+        var_rng = max(100_000, int(base * 0.05))
+        delta   = RNG.randint(-var_rng, var_rng)
+        amt     = max(1, base + delta)
 
-    # ── Koreksi selisih pembulatan ────────────────────────────────────────────
+        # Jadikan non-bulat: bulatkan ke ribuan lalu tambahkan komponen acak
+        amt = (amt // 1_000) * 1_000 + RNG.randint(237, 937)
+
+        # Clamp ke rentang valid — jaminan tidak stuck
+        amt = max(must_cover, min(can_cover, amt))
+
+        parts.append({"machine": name, "amount": amt})
+        remaining -= amt
+
+    # ── Koreksi selisih ───────────────────────────────────────────────────────
     diff = total - sum(p["amount"] for p in parts)
     if diff != 0:
-        machine_limit = dict(machines)  # precompute — hindari re-create di setiap iterasi
+        machine_cap_map = {name: limit - SAFETY_GAP for name, limit in machines}
 
         for p in parts:
             if diff == 0:
                 break
-            limit    = machine_limit[p["machine"]]
-            headroom = (limit - SAFETY_GAP) - p["amount"]
+            cap      = machine_cap_map[p["machine"]]
+            headroom = cap - p["amount"]
             if 0 < diff <= headroom and _is_non_round(p["amount"] + diff):
                 p["amount"] += diff
                 diff = 0
-            elif diff < 0 and abs(diff) < p["amount"] - 500 and _is_non_round(p["amount"] + diff):
+            elif diff < 0 and abs(diff) < p["amount"] - 1 and _is_non_round(p["amount"] + diff):
                 p["amount"] += diff
                 diff = 0
 
@@ -195,19 +255,17 @@ def split_transaction_exact(
             for p in parts:
                 if diff == 0:
                     break
-                limit    = machine_limit[p["machine"]]
-                headroom = (limit - SAFETY_GAP) - p["amount"]
+                cap      = machine_cap_map[p["machine"]]
+                headroom = cap - p["amount"]
                 step     = diff if abs(diff) <= headroom else headroom
-                if step == 0:
-                    continue
-                if _is_non_round(p["amount"] + step):
+                if step != 0 and _is_non_round(p["amount"] + step):
                     p["amount"] += step
                     diff        -= step
 
         if diff != 0:
             parts[-1]["amount"] += diff
 
-    assert sum(p["amount"] for p in parts) == total, "Total tidak sesuai setelah penyesuaian!"
+    assert sum(p["amount"] for p in parts) == total, "Total mismatch setelah penyesuaian!"
     return parts
 
 # ─── Menu: Pembagian EDC (Proporsional) ──────────────────────────────────────
@@ -517,11 +575,11 @@ elif menu == "Input Data":
             teks_express = (
                 f"*TRANSAKSI NO. {transaksi_no} ({metode_transaksi.upper()})*\n"
                 f"*EXPRESS*\n\n"
-                f"• Nama Nasabah    : *{nama}*\n"
+                f"• Nama Nasabah: *{nama}*\n"
                 f"• Kategori Nasabah: *{kategori}*\n"
-                f"• Kelas Nasabah   : *{kelas}*\n"
-                f"• Rate Jual       : *{rate_tampil}*\n"
-                f"• Jumlah Transfer : *{format_rupiah(trf_final)}*\n"
+                f"• Kelas Nasabah: *{kelas}*\n"
+                f"• Rate Jual: *{rate_tampil}*\n"
+                f"• Jumlah Transfer: *{format_rupiah(trf_final)}*\n"
                 f"_______________________________\n"
                 f"Estimasi Selesai: {waktu_selesai}"
             )
@@ -633,19 +691,19 @@ elif menu == "Input Data":
                 teks_normal = (
                     f"*TRANSAKSI NO. {transaksi_no} ({metode_transaksi.upper()})*\n"
                     f"_______________________________\n"
-                    f"• Nama Nasabah                   : {nama_n}\n"
-                    f"• Kategori Nasabah               : {jenis_n} ({kelas_n})\n"
-                    f"• Jenis Media Pencairan          : {media}\n"
-                    f"• Produk                         : {produk}\n"
-                    f"• Rate Jual                      : {rt_str}\n"
-                    f"• Rate Untung                    : {ru_str}\n"
-                    f"• Nominal Transaksi              : *{format_rupiah(jt_final_n)}*\n"
-                    f"• Biaya Nasabah Baru             : Rp. {int(biaya_baru_n):,}\n"
-                    f"• Biaya Transfer Selain BCA      : Rp. {int(biaya_transfer):,}\n"
-                    f"• Biaya Transaksi di Mesin EDC   : Rp. {int(biaya_edc):,}\n"
-                    f"• Biaya Layanan QRIS By WhatsApp : Rp. {int(biaya_qris):,}\n"
+                    f"• Nama Nasabah: {nama_n}\n"
+                    f"• Kategori Nasabah: {jenis_n} ({kelas_n})\n"
+                    f"• Jenis Media Pencairan: {media}\n"
+                    f"• Produk: {produk}\n"
+                    f"• Rate Jual: {rt_str}\n"
+                    f"• Rate Untung: {ru_str}\n"
+                    f"• Nominal Transaksi: *{format_rupiah(jt_final_n)}*\n"
+                    f"• Biaya Nasabah Baru: Rp. {int(biaya_baru_n):,}\n"
+                    f"• Biaya Transfer Selain BCA: Rp. {int(biaya_transfer):,}\n"
+                    f"• Biaya Transaksi di Mesin EDC: Rp. {int(biaya_edc):,}\n"
+                    f"• Biaya Layanan QRIS By WhatsApp: Rp. {int(biaya_qris):,}\n"
                     f"_______________________________\n"
-                    f"Jumlah Transfer : *{format_rupiah(trf_final_n)}*\n"
+                    f"Jumlah Transfer: *{format_rupiah(trf_final_n)}*\n"
                     f"🕓 Estimasi Selesai: {waktu_selesai_n}\n\n"
                     f"Petugas: {petugas_nama} ({petugas_shift})"
                 )
