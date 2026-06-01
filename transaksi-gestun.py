@@ -365,21 +365,6 @@ if menu == "Konven":
             </div>
             """, unsafe_allow_html=True)
 
-        with st.expander("🧾 Rangkuman Transaksi", expanded=True):
-            st.write("Terima kasih Kakak/Bapak/Ibu! Berikut adalah rangkuman transaksinya. Semua komponen biaya sudah kami gabungkan menjadi satu agar lebih praktis.")
-            
-            if total_potongan_kotor > 0 or total_biaya_bersih > 0:
-                st.info(f"💡 **Total Penyesuaian Layanan & Admin:**\n- **{format_rupiah(total_potongan_kotor)}** (jika pilih Metode Kotor)\n- **{format_rupiah(total_biaya_bersih)}** (jika pilih Metode Bersih)")
-                
-            st.caption("*Tidak ada biaya tambahan atau potongan tersembunyi lainnya di luar nominal penyesuaian di atas.*")
-
-        st.divider()
-        c1, c2 = st.columns(2)
-        with c1:
-            st.warning(f"✅ **Waktu Pembelian:** {waktu_sekarang.strftime('%H:%M')} WIB")
-        with c2:
-            st.success(f"✅ **Dana Masuk:** {est_selesai} WIB")
-            
         # =========================================================
         # Bagian Transparansi Rincian
         # =========================================================
@@ -404,6 +389,21 @@ if menu == "Konven":
             st.markdown("---")
             st.markdown(f"**Total Penyesuaian (Metode Kotor):** `{format_rupiah(total_potongan_kotor)}`")
             st.markdown(f"**Total Penyesuaian (Metode Bersih):** `{format_rupiah(total_biaya_bersih)}`")
+
+        with st.expander("🧾 Rangkuman Transaksi", expanded=True):
+            st.write("Terima kasih Kakak/Bapak/Ibu! Berikut adalah rangkuman transaksinya. Semua komponen biaya sudah kami gabungkan menjadi satu agar lebih praktis.")
+            
+            if total_potongan_kotor > 0 or total_biaya_bersih > 0:
+                st.info(f"💡 **Total Penyesuaian Layanan & Admin:**\n- **{format_rupiah(total_potongan_kotor)}** (jika pilih Metode Kotor)\n- **{format_rupiah(total_biaya_bersih)}** (jika pilih Metode Bersih)")
+                
+            st.caption("*Tidak ada biaya tambahan atau potongan tersembunyi lainnya di luar nominal penyesuaian di atas.*")
+
+        st.divider()
+        c1, c2 = st.columns(2)
+        with c1:
+            st.warning(f"✅ **Waktu Pembelian:** {waktu_sekarang.strftime('%H:%M')} WIB")
+        with c2:
+            st.success(f"✅ **Dana Masuk:** {est_selesai} WIB")
             
     else:
         st.info("💡 Masukkan nominal untuk melihat perbandingan secara real-time.")
