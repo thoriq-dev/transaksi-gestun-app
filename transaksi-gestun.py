@@ -444,7 +444,7 @@ if menu == "Konven":
             """, unsafe_allow_html=True)
 
         st.write("")
-        with st.expander("🔎 Rincian Transparansi Biaya (Opsional)", expanded=False):
+        with st.expander("🔎 Rincian Transparansi Biaya (Opsional)", expanded=True):
             st.markdown(
                 "Sebagai bentuk transparansi layanan kami, berikut adalah rincian "
                 "kalkulasi sistem jika Kakak/Bapak/Ibu membutuhkannya:"
@@ -462,7 +462,7 @@ if menu == "Konven":
             st.markdown(f"**Total Penyesuaian (Metode Kotor):** `{format_rupiah(total_potongan_kotor)}`")
             st.markdown(f"**Total Penyesuaian (Metode Bersih):** `{format_rupiah(total_biaya_bersih)}`")
 
-        with st.expander("🧾 Rangkuman Transaksi", expanded=True):
+        with st.expander("🧾 Rangkuman Transaksi", expanded=False):
             st.write(
                 "Terima kasih Kakak/Bapak/Ibu! Berikut adalah rangkuman transaksinya. "
                 "Semua komponen biaya sudah kami gabungkan menjadi satu agar lebih praktis."
