@@ -444,7 +444,7 @@ if menu == "Konven":
             """, unsafe_allow_html=True)
 
         st.write("")
-        with st.expander("🔎 Rincian Transparansi Biaya (Opsional)", expanded=True):
+        with st.expander("🔎 Rincian Transparansi Biaya (Opsional)", expanded=False):
             st.markdown(
                 "Sebagai bentuk transparansi layanan kami, berikut adalah rincian "
                 "kalkulasi sistem jika Kakak/Bapak/Ibu membutuhkannya:"
